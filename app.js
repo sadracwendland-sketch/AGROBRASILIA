@@ -2,7 +2,9 @@
 // CONFIGURAÇÕES
 // ===============================
 const AUTOMATE_URL =
-  "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/54ceef6d13c64d7a8f1085e46c2cefc7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9KrjOvGsi9MObheaegNPDDzFYJrDu6UqwNW5ALh-y3g";
+  "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8d7d7c22d76e4bab80ccb6c69ec213bd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CiMry-yaLyxnARZq1XlAZMDSjeJ7zE9szZ0tjbW-3zw";
+
+const LOCAL_EVENTO = "Agrobrasilia";
 
 const ADMIN_PASSWORD = "stine2026";
 
@@ -239,16 +241,11 @@ window.addEventListener("DOMContentLoaded", () => {
 async function enviarPayload(payload) {
   var r = await fetch(AUTOMATE_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json"
-    },
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify(payload)
   });
 
-  if (!r.ok) {
-    throw new Error("Erro HTTP " + r.status);
-  }
+  if (!r.ok) throw new Error("Erro HTTP " + r.status);
 }
 
 // ===============================
@@ -295,6 +292,7 @@ if (form) {
 
     var payload = {
       DataHora: new Date().toISOString(),
+      Local: LOCAL_EVENTO,
 
       Segue_Redes: form.segue ? form.segue.value : "",
       Aceite_LGPD: form.lgpd && form.lgpd.checked ? "Sim" : "Não",
