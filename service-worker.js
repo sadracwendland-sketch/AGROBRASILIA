@@ -1,4 +1,4 @@
-const CACHE_NAME = "stine-pwa-v5";
+const CACHE_NAME = "stine-pwa-v3";
 
 const FILES_TO_CACHE = [
   "/stine-pwa/",
@@ -7,7 +7,7 @@ const FILES_TO_CACHE = [
   "/stine-pwa/style.css",
   "/stine-pwa/manifest.json",
   "/stine-pwa/logo-stine.png",
-  "/stine-pwa/logo_evento.png",
+  "/stine-pwa/show_rural_coopavel.png",
   "/stine-pwa/instagram.png"
 ];
 
@@ -19,7 +19,7 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// ATIVAÇÃO — apaga todos os caches antigos
+// ATIVAÇÃO
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>

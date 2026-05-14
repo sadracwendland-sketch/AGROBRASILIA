@@ -4,8 +4,7 @@
 const AUTOMATE_URL =
   "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8d7d7c22d76e4bab80ccb6c69ec213bd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CiMry-yaLyxnARZq1XlAZMDSjeJ7zE9szZ0tjbW-3zw";
 
-const AUTOMATE_URL_2 =
-  "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/54ceef6d13c64d7a8f1085e46c2cefc7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9KrjOvGsi9MObheaegNPDDzFYJrDu6UqwNW5ALh-y3g";
+const LOCAL_EVENTO = "Agrobrasilia";
 
 const ADMIN_PASSWORD = "stine2026";
 
@@ -147,49 +146,27 @@ function alternarCamposAdmin(cultura) {
 // ADMIN
 // ===============================
 function abrirAdmin() {
-  var senhaSection = document.getElementById("senhaSection");
-
-  // Proteção: se elemento não existe, há cache desatualizado
-  if (!senhaSection) {
-    var senha = prompt("Digite a senha (versão simplificada):");
-    if (!senha || senha !== ADMIN_PASSWORD) { alert("Senha incorreta"); return; }
-    var adminSection = document.getElementById("adminSection");
-    if (adminSection) adminSection.style.display = "block";
-    return;
-  }
-
-  var senhaInput = document.getElementById("senhaInput");
-  var senhaErro  = document.getElementById("senhaErro");
-
-  if (senhaInput) senhaInput.value = "";
-  if (senhaErro)  senhaErro.style.display = "none";
-
-  senhaSection.style.display = "block";
-  setTimeout(function() {
-    senhaSection.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (senhaInput) senhaInput.focus();
-  }, 100);
-}
-
-function fecharSenha() {
-  document.getElementById("senhaSection").style.display = "none";
-}
-
-function confirmarSenha() {
-  var senhaInput = document.getElementById("senhaInput");
-  var senhaErro  = document.getElementById("senhaErro");
-  var senha = senhaInput ? senhaInput.value : "";
+  var senha = prompt("Digite a senha:");
 
   if (senha !== ADMIN_PASSWORD) {
-    if (senhaErro)  senhaErro.style.display = "block";
-    if (senhaInput) { senhaInput.value = ""; senhaInput.focus(); }
+    alert("Senha incorreta");
     return;
   }
 
-  document.getElementById("senhaSection").style.display = "none";
+  var modalEl = document.getElementById("adminModal");
 
+  if (!modalEl) {
+    alert("Modal não encontrado");
+    return;
+  }
+
+  var modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+  // Preenche os campos com valores já salvos
   var dados = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
 
+  // ▼ carrega seleção de cultura ativa e aplica visibilidade imediata dos campos
   var culturaEl = document.getElementById("admin_cultura");
   if (culturaEl) {
     culturaEl.value = dados.cultura || "Ambas";
@@ -197,21 +174,17 @@ function confirmarSenha() {
   }
 
   document.getElementById("admin_variedade_soja").value = dados.variedade_soja || "";
-  document.getElementById("admin_pop_soja").value       = dados.populacao_final_soja || "";
-  document.getElementById("admin_hibrido_milho").value  = dados.hibrido_milho || "";
-  document.getElementById("admin_pmg_milho").value      = dados.pmg_milho || "";
-  document.getElementById("admin_pop_milho").value      = dados.populacao_final_milho || "";
-
-  var adminSection = document.getElementById("adminSection");
-  adminSection.style.display = "block";
-  setTimeout(function() {
-    adminSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 100);
+  document.getElementById("admin_pop_soja").value = dados.populacao_final_soja || "";
+  document.getElementById("admin_hibrido_milho").value = dados.hibrido_milho || "";
+  document.getElementById("admin_pmg_milho").value = dados.pmg_milho || "";
+  document.getElementById("admin_pop_milho").value = dados.populacao_final_milho || "";
 }
 
 function salvarAdmin() {
   var dados = {
+    // ▼ salva cultura ativa junto com os demais parâmetros
     cultura: document.getElementById("admin_cultura") ? document.getElementById("admin_cultura").value : "Ambas",
+
     variedade_soja: document.getElementById("admin_variedade_soja").value,
     populacao_final_soja: document.getElementById("admin_pop_soja").value,
     hibrido_milho: document.getElementById("admin_hibrido_milho").value,
@@ -220,9 +193,13 @@ function salvarAdmin() {
   };
 
   localStorage.setItem(STORAGE_ADMIN, JSON.stringify(dados));
+
   carregarParametrosAdmin();
+
   alert("Parâmetros salvos com sucesso!");
-  document.getElementById("adminSection").style.display = "none";
+
+  var modal = bootstrap.Modal.getInstance(document.getElementById("adminModal"));
+  if (modal) modal.hide();
 }
 
 function carregarParametrosAdmin() {
@@ -262,21 +239,13 @@ window.addEventListener("DOMContentLoaded", () => {
 // ENVIO
 // ===============================
 async function enviarPayload(payload) {
-  var body = JSON.stringify(payload);
-  var opts = {
+  var r = await fetch(AUTOMATE_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: body
-  };
+    body: JSON.stringify(payload)
+  });
 
-  // Dispara para as duas URLs em paralelo — se qualquer uma falhar, lança erro
-  var [r1, r2] = await Promise.all([
-    fetch(AUTOMATE_URL,   opts),
-    fetch(AUTOMATE_URL_2, opts)
-  ]);
-
-  if (!r1.ok) throw new Error("Erro planilha 1: HTTP " + r1.status);
-  if (!r2.ok) throw new Error("Erro planilha 2: HTTP " + r2.status);
+  if (!r.ok) throw new Error("Erro HTTP " + r.status);
 }
 
 // ===============================
@@ -323,6 +292,7 @@ if (form) {
 
     var payload = {
       DataHora: new Date().toISOString(),
+      Local: LOCAL_EVENTO,
 
       Segue_Redes: form.segue ? form.segue.value : "",
       Aceite_LGPD: form.lgpd && form.lgpd.checked ? "Sim" : "Não",
@@ -512,17 +482,6 @@ async function sincronizarOffline() {
 }
 
 window.sincronizarOffline = sincronizarOffline;
-window.confirmarSenha = confirmarSenha;
-
-// Enter no campo de senha confirma
-document.addEventListener("DOMContentLoaded", function() {
-  var senhaInput = document.getElementById("senhaInput");
-  if (senhaInput) {
-    senhaInput.addEventListener("keypress", function(e) {
-      if (e.key === "Enter") confirmarSenha();
-    });
-  }
-});
 
 // ===============================
 // LISTENERS
@@ -575,9 +534,22 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-window.confirmarSenha = confirmarSenha;
-window.fecharSenha = fecharSenha;
+// ===============================
+// ajuste falha no Android
+// ===============================
 
 function fecharAdmin() {
-  document.getElementById("adminSection").style.display = "none";
+  var modal = document.getElementById("adminModal");
+
+  // tenta fechar via Bootstrap
+  if (typeof bootstrap !== "undefined") {
+    var instance = bootstrap.Modal.getInstance(modal);
+    if (instance) {
+      instance.hide();
+      return;
+    }
+  }
+
+  // fallback Android (sem bootstrap)
+  modal.style.display = "none";
 }
