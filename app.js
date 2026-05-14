@@ -78,8 +78,7 @@ function abrirAdmin() {
   if (el("adminSection"))  el("adminSection").style.display  = "none";
   if (el("senhaInput"))    el("senhaInput").value            = "";
   if (el("senhaErro"))     el("senhaErro").style.display     = "none";
-  if (el("senhaSection"))  el("senhaSection").style.display  = "block";
-  try { el("senhaSection").scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch(e) {}
+  if (el("senhaSection"))  el("senhaSection").style.display  = "flex";
   try { el("senhaInput").focus(); } catch(e) {}
 }
 
@@ -104,11 +103,7 @@ function confirmarSenha() {
   if (el("admin_pmg_milho"))       el("admin_pmg_milho").value         = dados.pmg_milho              || "";
   if (el("admin_pop_milho"))       el("admin_pop_milho").value         = dados.populacao_final_milho  || "";
   if (el("msgAdminSucesso"))       el("msgAdminSucesso").style.display = "none";
-
-  if (el("adminSection")) {
-    el("adminSection").style.display = "block";
-    try { el("adminSection").scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch(e) {}
-  }
+  if (el("adminSection"))          el("adminSection").style.display    = "flex";
 }
 
 function salvarAdmin() {
@@ -121,11 +116,8 @@ function salvarAdmin() {
     populacao_final_milho: el("admin_pop_milho")      ? el("admin_pop_milho").value      : ""
   };
   if (!dados.cultura) dados.cultura = "Ambas";
-
   localStorage.setItem(STORAGE_ADMIN, JSON.stringify(dados));
   carregarParametrosAdmin();
-
-  // Feedback inline — sem alert() (bloqueado no iPad PWA)
   if (el("msgAdminSucesso")) {
     el("msgAdminSucesso").style.display = "block";
     setTimeout(function() {
@@ -360,6 +352,7 @@ document.addEventListener("DOMContentLoaded", function() {
   if (el("btnFecharSenha"))    el("btnFecharSenha").onclick    = fecharSenha;
   if (el("btnSalvarAdmin"))    el("btnSalvarAdmin").onclick    = salvarAdmin;
   if (el("btnFecharAdmin"))    el("btnFecharAdmin").onclick    = fecharAdmin;
+  if (el("btnFecharAdmin2"))   el("btnFecharAdmin2").onclick   = fecharAdmin;
   if (el("btnSincronizar"))    el("btnSincronizar").onclick    = sincronizarOffline;
 
   if (el("senhaInput")) el("senhaInput").onkeypress = function(e) { if (e.key === "Enter") confirmarSenha(); };
