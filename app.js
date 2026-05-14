@@ -148,8 +148,18 @@ function alternarCamposAdmin(cultura) {
 // ===============================
 function abrirAdmin() {
   var senhaSection = document.getElementById("senhaSection");
-  var senhaInput   = document.getElementById("senhaInput");
-  var senhaErro    = document.getElementById("senhaErro");
+
+  // Proteção: se elemento não existe, há cache desatualizado
+  if (!senhaSection) {
+    var senha = prompt("Digite a senha (versão simplificada):");
+    if (!senha || senha !== ADMIN_PASSWORD) { alert("Senha incorreta"); return; }
+    var adminSection = document.getElementById("adminSection");
+    if (adminSection) adminSection.style.display = "block";
+    return;
+  }
+
+  var senhaInput = document.getElementById("senhaInput");
+  var senhaErro  = document.getElementById("senhaErro");
 
   if (senhaInput) senhaInput.value = "";
   if (senhaErro)  senhaErro.style.display = "none";
