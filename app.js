@@ -4,7 +4,8 @@
 const AUTOMATE_URL =
   "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8d7d7c22d76e4bab80ccb6c69ec213bd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CiMry-yaLyxnARZq1XlAZMDSjeJ7zE9szZ0tjbW-3zw";
 
-const LOCAL_EVENTO = "Agrobrasilia";
+const AUTOMATE_URL_2 =
+  "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/54ceef6d13c64d7a8f1085e46c2cefc7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9KrjOvGsi9MObheaegNPDDzFYJrDu6UqwNW5ALh-y3g";
 
 const ADMIN_PASSWORD = "stine2026";
 
@@ -143,30 +144,66 @@ function alternarCamposAdmin(cultura) {
 }
 
 // ===============================
-// ADMIN
+// ADMIN — bindings via addEventListener (compatível com iPad Safari)
 // ===============================
+document.addEventListener("DOMContentLoaded", function() {
+  var btnAdmin          = document.getElementById("btnAdmin");
+  var btnConfirmarSenha = document.getElementById("btnConfirmarSenha");
+  var btnFecharSenha    = document.getElementById("btnFecharSenha");
+  var btnSalvarAdmin    = document.getElementById("btnSalvarAdmin");
+  var btnFecharAdmin    = document.getElementById("btnFecharAdmin");
+  var senhaInput        = document.getElementById("senhaInput");
+
+  if (btnAdmin)          btnAdmin.addEventListener("click",          abrirAdmin);
+  if (btnConfirmarSenha) btnConfirmarSenha.addEventListener("click", confirmarSenha);
+  if (btnFecharSenha)    btnFecharSenha.addEventListener("click",    fecharSenha);
+  if (btnSalvarAdmin)    btnSalvarAdmin.addEventListener("click",    salvarAdmin);
+  if (btnFecharAdmin)    btnFecharAdmin.addEventListener("click",    fecharAdmin);
+
+  if (senhaInput) {
+    senhaInput.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") confirmarSenha();
+    });
+  }
+});
+
 function abrirAdmin() {
-  var senha = prompt("Digite a senha:");
+  var senhaSection = document.getElementById("senhaSection");
+  var senhaInput   = document.getElementById("senhaInput");
+  var senhaErro    = document.getElementById("senhaErro");
+
+  if (!senhaSection) return;
+  if (senhaInput) senhaInput.value = "";
+  if (senhaErro)  senhaErro.style.display = "none";
+
+  senhaSection.style.display = "block";
+  setTimeout(function() {
+    senhaSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (senhaInput) senhaInput.focus();
+  }, 50);
+}
+
+function fecharSenha() {
+  var el = document.getElementById("senhaSection");
+  if (el) el.style.display = "none";
+}
+
+function confirmarSenha() {
+  var senhaInput = document.getElementById("senhaInput");
+  var senhaErro  = document.getElementById("senhaErro");
+  var senha = senhaInput ? senhaInput.value : "";
 
   if (senha !== ADMIN_PASSWORD) {
-    alert("Senha incorreta");
+    if (senhaErro)  senhaErro.style.display = "block";
+    if (senhaInput) { senhaInput.value = ""; senhaInput.focus(); }
     return;
   }
 
-  var modalEl = document.getElementById("adminModal");
+  var senhaSection = document.getElementById("senhaSection");
+  if (senhaSection) senhaSection.style.display = "none";
 
-  if (!modalEl) {
-    alert("Modal não encontrado");
-    return;
-  }
-
-  var modal = new bootstrap.Modal(modalEl);
-  modal.show();
-
-  // Preenche os campos com valores já salvos
   var dados = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
 
-  // ▼ carrega seleção de cultura ativa e aplica visibilidade imediata dos campos
   var culturaEl = document.getElementById("admin_cultura");
   if (culturaEl) {
     culturaEl.value = dados.cultura || "Ambas";
@@ -174,17 +211,23 @@ function abrirAdmin() {
   }
 
   document.getElementById("admin_variedade_soja").value = dados.variedade_soja || "";
-  document.getElementById("admin_pop_soja").value = dados.populacao_final_soja || "";
-  document.getElementById("admin_hibrido_milho").value = dados.hibrido_milho || "";
-  document.getElementById("admin_pmg_milho").value = dados.pmg_milho || "";
-  document.getElementById("admin_pop_milho").value = dados.populacao_final_milho || "";
+  document.getElementById("admin_pop_soja").value       = dados.populacao_final_soja || "";
+  document.getElementById("admin_hibrido_milho").value  = dados.hibrido_milho || "";
+  document.getElementById("admin_pmg_milho").value      = dados.pmg_milho || "";
+  document.getElementById("admin_pop_milho").value      = dados.populacao_final_milho || "";
+
+  var adminSection = document.getElementById("adminSection");
+  if (adminSection) {
+    adminSection.style.display = "block";
+    setTimeout(function() {
+      adminSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 50);
+  }
 }
 
 function salvarAdmin() {
   var dados = {
-    // ▼ salva cultura ativa junto com os demais parâmetros
     cultura: document.getElementById("admin_cultura") ? document.getElementById("admin_cultura").value : "Ambas",
-
     variedade_soja: document.getElementById("admin_variedade_soja").value,
     populacao_final_soja: document.getElementById("admin_pop_soja").value,
     hibrido_milho: document.getElementById("admin_hibrido_milho").value,
@@ -193,363 +236,13 @@ function salvarAdmin() {
   };
 
   localStorage.setItem(STORAGE_ADMIN, JSON.stringify(dados));
-
   carregarParametrosAdmin();
-
   alert("Parâmetros salvos com sucesso!");
-
-  var modal = bootstrap.Modal.getInstance(document.getElementById("adminModal"));
-  if (modal) modal.hide();
+  var adminSection = document.getElementById("adminSection");
+  if (adminSection) adminSection.style.display = "none";
 }
-
-function carregarParametrosAdmin() {
-  var dados = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
-
-  if (dados.variedade_soja) {
-    variedadeSojaInput.value = dados.variedade_soja;
-    variedadeSojaText.innerText = dados.variedade_soja;
-  }
-  if (dados.populacao_final_soja) {
-    populacaoFinalSojaInput.value = dados.populacao_final_soja;
-    populacaoFinalSojaText.innerText = dados.populacao_final_soja;
-  }
-  if (dados.hibrido_milho) {
-    hibridoMilhoInput.value = dados.hibrido_milho;
-    hibridoMilhoText.innerText = dados.hibrido_milho;
-  }
-  if (dados.pmg_milho) {
-    pmgMilhoInput.value = dados.pmg_milho;
-    pmgMilhoText.innerText = dados.pmg_milho;
-  }
-  if (dados.populacao_final_milho) {
-    populacaoFinalMilhoInput.value = dados.populacao_final_milho;
-    populacaoFinalMilhoText.innerText = dados.populacao_final_milho;
-  }
-
-  // ▼ aplica visibilidade das seções conforme cultura salva
-  aplicarCulturaAtiva(dados.cultura || "Ambas");
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  carregarParametrosAdmin();
-  atualizarStatusConexao();
-});
-
-// ===============================
-// ENVIO
-// ===============================
-async function enviarPayload(payload) {
-  var r = await fetch(AUTOMATE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  if (!r.ok) throw new Error("Erro HTTP " + r.status);
-}
-
-// ===============================
-// LIMPEZA DO FORMULÁRIO
-// ===============================
-function limparFormularioPreservandoAdmin() {
-
-  // Salva todos os 5 parâmetros técnicos (hidden) antes do reset
-  var variedadeSoja      = variedadeSojaInput.value;
-  var populacaoSoja      = populacaoFinalSojaInput.value;
-  var hibridoMilho       = hibridoMilhoInput.value;
-  var pmgMilho           = pmgMilhoInput.value;
-  var populacaoMilho     = populacaoFinalMilhoInput.value;
-
-  form.reset(); // limpa tudo — inclusive estimativas de soja e milho
-
-  // Limpeza explícita dos campos de estimativa (garante em Android e campos hidden via display:none)
-  ["vagens", "graos", "produtividade", "graos_milho", "produtividade_milho"].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.value = "";
-  });
-
-  // Restaura parâmetros técnicos nos inputs hidden
-  variedadeSojaInput.value      = variedadeSoja;
-  populacaoFinalSojaInput.value = populacaoSoja;
-  hibridoMilhoInput.value       = hibridoMilho;
-  pmgMilhoInput.value           = pmgMilho;
-  populacaoFinalMilhoInput.value = populacaoMilho;
-
-  // Restaura os textos exibidos na tela
-  variedadeSojaText.innerText      = variedadeSoja;
-  populacaoFinalSojaText.innerText = populacaoSoja;
-  hibridoMilhoText.innerText       = hibridoMilho;
-  pmgMilhoText.innerText           = pmgMilho;
-  populacaoFinalMilhoText.innerText = populacaoMilho;
-}
-  
-// ===============================
-// SUBMIT
-// ===============================
-if (form) {
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    var payload = {
-      DataHora: new Date().toISOString(),
-      Local: LOCAL_EVENTO,
-
-      Segue_Redes: form.segue ? form.segue.value : "",
-      Aceite_LGPD: form.lgpd && form.lgpd.checked ? "Sim" : "Não",
-
-      Nome: form.nome.value,
-      Cargo: form.cargo ? form.cargo.value : "",
-      empresa_fazenda: form.empresa ? form.empresa.value : "",
-
-      Telefone: form.telefone.value,
-      Email: form.email.value,
-      Cidade: form.cidade.value,
-      UF: form.uf.value,
-      Area_Soja_ha: form.area.value,
-
-      planta_stine: form.planta_stine ? form.planta_stine.value : "",
-      qual_stine: form.qual_stine ? form.qual_stine.value : "",
-      fornecedor_semente: form.fornecedor_semente ? form.fornecedor_semente.value : "",
-
-      // SOJA
-      variedade_soja: variedadeSojaInput.value,
-      populacao_final_soja: populacaoFinalSojaInput.value,
-      vagens_planta: form.vagens.value,
-      graos_vagem: form.graos.value,
-      produtividade_sc_ha: form.produtividade.value,
-
-      // MILHO
-      hibrido_milho: hibridoMilhoInput.value,
-      pmg_milho: pmgMilhoInput.value,
-      populacao_final_milho: populacaoFinalMilhoInput.value,
-      graos_espiga_milho: form.graos_milho ? form.graos_milho.value : "",
-      produtividade_milho_sc_ha: form.produtividade_milho ? form.produtividade_milho.value : ""
-    };
-
-    var hash = gerarHashRegistro(payload);
-    var enviados = JSON.parse(localStorage.getItem(STORAGE_ENVIADOS) || "[]");
-
-    if (enviados.includes(hash)) {
-      alert("Este registro já foi enviado.");
-      return;
-    }
-
-    var fila = getFila();
-
-    try {
-      if (navigator.onLine) {
-        console.log("Payload enviado:", payload);
-        await enviarPayload(payload);
-
-        enviados.push(hash);
-        localStorage.setItem(STORAGE_ENVIADOS, JSON.stringify(enviados));
-
-        salvarLog("enviado", payload, "ok");
-        alert("Participação enviada com sucesso!");
-      } else {
-        fila.push({ hash: hash, payload: payload });
-        setFila(fila);
-
-        salvarLog("salvo_offline", payload, "pendente");
-        alert("Sem internet. Dados salvos localmente.");
-      }
-    } catch (erro) {
-      console.error("Erro no envio (submit):", erro);
-
-      fila.push({ hash: hash, payload: payload });
-      setFila(fila);
-
-      salvarLog("salvo_offline", payload, "pendente");
-      alert("Falha no envio. Registro salvo offline.");
-    }
-
-    limparFormularioPreservandoAdmin();
-    atualizarStatusConexao();
-  });
-}
-
-// ===============================
-// ENVIO AUTOMÁTICO (COM ALERT DE SUCESSO)
-// ===============================
-async function enviarFilaAutomatico() {
-  if (!navigator.onLine) return;
-
-  var fila = getFila();
-  if (fila.length === 0) return;
-
-  var enviados = JSON.parse(localStorage.getItem(STORAGE_ENVIADOS) || "[]");
-  var restante = [];
-  var qtdEnviados = 0;
-
-  for (var i = 0; i < fila.length; i++) {
-    var item = fila[i];
-
-    try {
-      // garante campos de milho para registros antigos
-      if (!item.payload.graos_espiga_milho) item.payload.graos_espiga_milho = "";
-      if (!item.payload.produtividade_milho_sc_ha) item.payload.produtividade_milho_sc_ha = "";
-
-     await enviarPayload(item.payload);
-await new Promise(r => setTimeout(r, 300));
-
-      enviados.push(item.hash);
-      salvarLog("enviado", item.payload, "ok");
-      qtdEnviados++;
-
-    } 
-    catch (erro) {
-  console.error("Erro no envio da fila automática:", erro, item.payload);
-  restante.push(item);
-}
-  }
-
-  localStorage.setItem(STORAGE_ENVIADOS, JSON.stringify(enviados));
-  setFila(restante);
-  atualizarStatusConexao();
-
-  // ALERT DE SUCESSO
-  if (qtdEnviados > 0) {
-    if (restante.length === 0) {
-      alert("Sincronizado com sucesso! " + qtdEnviados + " cadastro(s) enviado(s).");
-    } else {
-      alert("Sincronização parcial: " + qtdEnviados + " enviado(s), " + restante.length + " pendente(s).");
-    }
-  }
-}
-
-// ===============================
-// BOTÃO: SINCRONIZAR OFFLINE (MANUAL)
-// ===============================
-async function sincronizarOffline() {
-  if (!navigator.onLine) {
-    alert("Sem conexão com a internet.");
-    return;
-  }
-
-  var fila = getFila();
-
-  if (fila.length === 0) {
-    alert("Nenhum cadastro offline para sincronizar.");
-    return;
-  }
-
-  var enviados = JSON.parse(localStorage.getItem(STORAGE_ENVIADOS) || "[]");
-  var restante = [];
-  var qtdEnviados = 0;
-
-  for (var i = 0; i < fila.length; i++) {
-    var item = fila[i];
-
-    try {
-      // garante campos de milho para registros antigos
-      if (!item.payload.graos_espiga_milho) item.payload.graos_espiga_milho = "";
-      if (!item.payload.produtividade_milho_sc_ha) item.payload.produtividade_milho_sc_ha = "";
-
-      await enviarPayload(item.payload);
-      await new Promise(r => setTimeout(r, 300));
-
-      enviados.push(item.hash);
-      salvarLog("enviado", item.payload, "ok");
-      qtdEnviados++;
-
-    } 
-    catch (erroEnvio) {
-  console.error("Erro na sincronização manual:", erroEnvio, item.payload);
-  restante.push(item);
-}
-  }
-
-  localStorage.setItem(STORAGE_ENVIADOS, JSON.stringify(enviados));
-  setFila(restante);
-
-  var contadorEl = document.getElementById("offlineCount");
-  if (contadorEl) {
-    contadorEl.innerText = restante.length;
-  }
-
-  var moduloOffline = document.getElementById("offlineModule");
-  if (restante.length === 0 && moduloOffline) {
-    moduloOffline.classList.add("d-none");
-  }
-
-  atualizarStatusConexao();
-
-  if (restante.length === 0) {
-    alert("Sincronizado com sucesso! " + qtdEnviados + " cadastro(s) enviado(s).");
-  } else {
-    alert("Sincronização parcial: " + qtdEnviados + " enviado(s), " + restante.length + " pendente(s).");
-  }
-}
-
-window.sincronizarOffline = sincronizarOffline;
-
-// ===============================
-// LISTENERS
-// ===============================
-window.addEventListener("online", function() {
-  enviarFilaAutomatico();
-  atualizarStatusConexao();
-});
-
-window.addEventListener("offline", function() {
-  atualizarStatusConexao();
-});
-
-// ===============================
-// INIT
-// ===============================
-document.addEventListener("DOMContentLoaded", function() {
-  carregarParametrosAdmin();
-  enviarFilaAutomatico();
-  atualizarStatusConexao();
-});
-
-// ===============================
-// MÁSCARA TELEFONE (99)99999-9999
-// ===============================
-document.addEventListener("DOMContentLoaded", function() {
-  var telefoneInput = document.getElementById("telefone");
-  if (!telefoneInput) return;
-
-  telefoneInput.addEventListener("input", function() {
-    var v = telefoneInput.value.replace(/\D/g, "");
-
-    if (v.length > 11) v = v.slice(0, 11);
-
-    if (v.length > 6) {
-      telefoneInput.value = "(" + v.slice(0,2) + ")" + v.slice(2,7) + "-" + v.slice(7);
-    } else if (v.length > 2) {
-      telefoneInput.value = "(" + v.slice(0,2) + ")" + v.slice(2);
-    } else if (v.length > 0) {
-      telefoneInput.value = "(" + v;
-    } else {
-      telefoneInput.value = "";
-    }
-  });
-
-  telefoneInput.addEventListener("keypress", function(e) {
-    if (!/[0-9]/.test(e.key)) {
-      e.preventDefault();
-    }
-  });
-});
-
-// ===============================
-// ajuste falha no Android
-// ===============================
 
 function fecharAdmin() {
-  var modal = document.getElementById("adminModal");
-
-  // tenta fechar via Bootstrap
-  if (typeof bootstrap !== "undefined") {
-    var instance = bootstrap.Modal.getInstance(modal);
-    if (instance) {
-      instance.hide();
-      return;
-    }
-  }
-
-  // fallback Android (sem bootstrap)
-  modal.style.display = "none";
+  var el = document.getElementById("adminSection");
+  if (el) el.style.display = "none";
 }

@@ -229,9 +229,58 @@
   </form>
 
   <!-- ADMIN -->
-  <button type="button" class="btn btn-outline-secondary mt-4 w-100" onclick="abrirAdmin()">
-    Área Administrativa
+  <button id="btnAdmin" type="button" class="btn btn-outline-secondary mt-4 w-100">
+    ⚙️ Área Administrativa
   </button>
+
+  <!-- SEÇÃO SENHA — aparece logo abaixo do botão -->
+  <div id="senhaSection" style="display:none;" class="card mt-2 border-success">
+    <div class="card-header">Área Administrativa</div>
+    <div class="card-body">
+      <label class="mb-1">Digite a senha:</label>
+      <input type="password" id="senhaInput" class="form-control mt-1" placeholder="Senha" autocomplete="off">
+      <div id="senhaErro" style="display:none; color:#dc3545; margin-top:8px; font-size:0.9rem;">Senha incorreta.</div>
+      <button type="button" class="btn btn-success w-100 mt-3" id="btnConfirmarSenha">Entrar</button>
+      <button type="button" class="btn btn-outline-secondary w-100 mt-2" id="btnFecharSenha">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- SEÇÃO ADMIN — aparece logo abaixo -->
+  <div id="adminSection" style="display:none;" class="card mt-2">
+    <div class="card-header">Parâmetros técnicos</div>
+    <div class="card-body">
+
+      <label class="fw-bold">Cultura ativa no evento</label>
+      <select id="admin_cultura" class="form-select mb-3" onchange="alternarCamposAdmin(this.value)">
+        <option value="Ambas">🌱 Soja e Milho (ambas)</option>
+        <option value="Soja">🟡 Apenas Soja</option>
+        <option value="Milho">🟠 Apenas Milho</option>
+      </select>
+      <hr>
+
+      <div id="adminCamposSoja">
+        <label>Variedade soja</label>
+        <input id="admin_variedade_soja" class="form-control mb-2">
+        <label>População final soja</label>
+        <input id="admin_pop_soja" class="form-control mb-2">
+      </div>
+
+      <div id="adminCamposMilho">
+        <label>Híbrido milho</label>
+        <input id="admin_hibrido_milho" class="form-control mb-2">
+        <label>PMG milho</label>
+        <input id="admin_pmg_milho" class="form-control mb-2">
+        <label>População final milho</label>
+        <input id="admin_pop_milho" class="form-control mb-2">
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-success flex-grow-1" id="btnSalvarAdmin">Salvar parâmetros</button>
+        <button type="button" class="btn btn-secondary" id="btnFecharAdmin">Fechar</button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- OFFLINE -->
   <div id="offlineModule" class="card mt-3 d-none">
@@ -254,7 +303,7 @@
 
 </div>
 
-<script src="app.js?v=3" defer></script>
+<script src="app.js?v=5" defer></script>
 
 <script>
   if ("serviceWorker" in navigator) {
@@ -263,63 +312,6 @@
     });
   }
 </script>
-
-<!-- MODAL ADMINISTRATIVO -->
-<div class="modal fade" id="adminModal" tabindex="-1" style="display:none;">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">Parâmetros técnicos</h5>
-        <button type="button" class="btn-close" onclick="fecharAdmin()"></button>
-      </div>
-
-      <div class="modal-body">
-
-        <!-- ▼ CAMPO NOVO: seleção de cultura ativa no evento -->
-        <label class="fw-bold">Cultura ativa no evento</label>
-        <select id="admin_cultura" class="form-select mb-3" onchange="alternarCamposAdmin(this.value)">
-          <option value="Ambas">🌱 Soja e Milho (ambas)</option>
-          <option value="Soja">🟡 Apenas Soja</option>
-          <option value="Milho">🟠 Apenas Milho</option>
-        </select>
-        <hr>
-
-        <!-- ▼ campos de soja agrupados para ocultar/exibir -->
-        <div id="adminCamposSoja">
-          <label>Variedade soja</label>
-          <input id="admin_variedade_soja" class="form-control mb-2">
-
-          <label>População final soja</label>
-          <input id="admin_pop_soja" class="form-control mb-2">
-        </div>
-
-        <!-- ▼ campos de milho agrupados para ocultar/exibir -->
-        <div id="adminCamposMilho">
-          <label>Híbrido milho</label>
-          <input id="admin_hibrido_milho" class="form-control mb-2">
-
-          <label>PMG milho</label>
-          <input id="admin_pmg_milho" class="form-control mb-2">
-
-          <label>População final milho</label>
-          <input id="admin_pop_milho" class="form-control mb-2">
-        </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-success" onclick="salvarAdmin()">
-          Salvar parâmetros
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="fecharAdmin()">
-          Fechar
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   
