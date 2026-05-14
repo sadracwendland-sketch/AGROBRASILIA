@@ -3,9 +3,8 @@
 // ===============================
 const AUTOMATE_URL =
   "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8d7d7c22d76e4bab80ccb6c69ec213bd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CiMry-yaLyxnARZq1XlAZMDSjeJ7zE9szZ0tjbW-3zw";
-
-const AUTOMATE_URL_2 =
-  "https://defaultc18e5a39b8224257bd2a34c15bd7b4.77.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/54ceef6d13c64d7a8f1085e46c2cefc7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9KrjOvGsi9MObheaegNPDDzFYJrDu6UqwNW5ALh-y3g";
+ 
+const LOCAL_EVENTO = "Agrobrasilia";
 
 const ADMIN_PASSWORD = "stine2026";
 
