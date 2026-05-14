@@ -147,30 +147,36 @@ function alternarCamposAdmin(cultura) {
 // ADMIN
 // ===============================
 function abrirAdmin() {
-  var overlay = document.getElementById("senhaOverlay");
-  var senhaInput = document.getElementById("senhaInput");
-  var senhaErro = document.getElementById("senhaErro");
+  var senhaSection = document.getElementById("senhaSection");
+  var senhaInput   = document.getElementById("senhaInput");
+  var senhaErro    = document.getElementById("senhaErro");
 
   if (senhaInput) senhaInput.value = "";
-  if (senhaErro) senhaErro.style.display = "none";
+  if (senhaErro)  senhaErro.style.display = "none";
 
-  overlay.style.display = "flex";
-  setTimeout(function() { if (senhaInput) senhaInput.focus(); }, 200);
+  senhaSection.style.display = "block";
+  setTimeout(function() {
+    senhaSection.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (senhaInput) senhaInput.focus();
+  }, 100);
+}
+
+function fecharSenha() {
+  document.getElementById("senhaSection").style.display = "none";
 }
 
 function confirmarSenha() {
   var senhaInput = document.getElementById("senhaInput");
-  var senhaErro = document.getElementById("senhaErro");
+  var senhaErro  = document.getElementById("senhaErro");
   var senha = senhaInput ? senhaInput.value : "";
 
   if (senha !== ADMIN_PASSWORD) {
-    if (senhaErro) senhaErro.style.display = "block";
+    if (senhaErro)  senhaErro.style.display = "block";
     if (senhaInput) { senhaInput.value = ""; senhaInput.focus(); }
     return;
   }
 
-  // Fecha overlay de senha e abre o admin
-  document.getElementById("senhaOverlay").style.display = "none";
+  document.getElementById("senhaSection").style.display = "none";
 
   var dados = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
 
@@ -181,19 +187,21 @@ function confirmarSenha() {
   }
 
   document.getElementById("admin_variedade_soja").value = dados.variedade_soja || "";
-  document.getElementById("admin_pop_soja").value = dados.populacao_final_soja || "";
-  document.getElementById("admin_hibrido_milho").value = dados.hibrido_milho || "";
-  document.getElementById("admin_pmg_milho").value = dados.pmg_milho || "";
-  document.getElementById("admin_pop_milho").value = dados.populacao_final_milho || "";
+  document.getElementById("admin_pop_soja").value       = dados.populacao_final_soja || "";
+  document.getElementById("admin_hibrido_milho").value  = dados.hibrido_milho || "";
+  document.getElementById("admin_pmg_milho").value      = dados.pmg_milho || "";
+  document.getElementById("admin_pop_milho").value      = dados.populacao_final_milho || "";
 
-  document.getElementById("adminOverlay").style.display = "block";
+  var adminSection = document.getElementById("adminSection");
+  adminSection.style.display = "block";
+  setTimeout(function() {
+    adminSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 100);
 }
 
 function salvarAdmin() {
   var dados = {
-    // ▼ salva cultura ativa junto com os demais parâmetros
     cultura: document.getElementById("admin_cultura") ? document.getElementById("admin_cultura").value : "Ambas",
-
     variedade_soja: document.getElementById("admin_variedade_soja").value,
     populacao_final_soja: document.getElementById("admin_pop_soja").value,
     hibrido_milho: document.getElementById("admin_hibrido_milho").value,
@@ -202,13 +210,9 @@ function salvarAdmin() {
   };
 
   localStorage.setItem(STORAGE_ADMIN, JSON.stringify(dados));
-
   carregarParametrosAdmin();
-
   alert("Parâmetros salvos com sucesso!");
-
-  var modal = bootstrap.Modal.getInstance(document.getElementById("adminModal"));
-  if (modal) modal.hide();
+  document.getElementById("adminSection").style.display = "none";
 }
 
 function carregarParametrosAdmin() {
@@ -561,10 +565,9 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-// ===============================
-// ajuste falha no Android
-// ===============================
+window.confirmarSenha = confirmarSenha;
+window.fecharSenha = fecharSenha;
 
 function fecharAdmin() {
-  document.getElementById("adminOverlay").style.display = "none";
+  document.getElementById("adminSection").style.display = "none";
 }
