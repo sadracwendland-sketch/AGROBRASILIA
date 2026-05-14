@@ -147,55 +147,31 @@ function alternarCamposAdmin(cultura) {
 // ADMIN
 // ===============================
 function abrirAdmin() {
-  // Abre modal de senha customizado (compatível com iPad PWA)
-  var senhaModal = document.getElementById("senhaModal");
+  var overlay = document.getElementById("senhaOverlay");
   var senhaInput = document.getElementById("senhaInput");
-  var senhaErro  = document.getElementById("senhaErro");
+  var senhaErro = document.getElementById("senhaErro");
 
   if (senhaInput) senhaInput.value = "";
-  if (senhaErro)  senhaErro.classList.add("d-none");
+  if (senhaErro) senhaErro.style.display = "none";
 
-  try {
-    var m = new bootstrap.Modal(senhaModal);
-    m.show();
-  } catch(e) {
-    senhaModal.style.display = "block";
-    senhaModal.classList.add("show");
-  }
-
-  // Foca no campo de senha após abrir
-  setTimeout(function() { if (senhaInput) senhaInput.focus(); }, 400);
+  overlay.style.display = "flex";
+  setTimeout(function() { if (senhaInput) senhaInput.focus(); }, 200);
 }
 
 function confirmarSenha() {
   var senhaInput = document.getElementById("senhaInput");
-  var senhaErro  = document.getElementById("senhaErro");
+  var senhaErro = document.getElementById("senhaErro");
   var senha = senhaInput ? senhaInput.value : "";
 
   if (senha !== ADMIN_PASSWORD) {
-    if (senhaErro) senhaErro.classList.remove("d-none");
+    if (senhaErro) senhaErro.style.display = "block";
     if (senhaInput) { senhaInput.value = ""; senhaInput.focus(); }
     return;
   }
 
-  // Fecha modal de senha
-  var senhaModalEl = document.getElementById("senhaModal");
-  try {
-    var sm = bootstrap.Modal.getInstance(senhaModalEl);
-    if (sm) sm.hide(); else senhaModalEl.style.display = "none";
-  } catch(e) { senhaModalEl.style.display = "none"; }
+  // Fecha overlay de senha e abre o admin
+  document.getElementById("senhaOverlay").style.display = "none";
 
-  // Abre modal admin
-  var modalEl = document.getElementById("adminModal");
-  try {
-    var modal = new bootstrap.Modal(modalEl);
-    modal.show();
-  } catch(e) {
-    modalEl.style.display = "block";
-    modalEl.classList.add("show");
-  }
-
-  // Preenche os campos com valores já salvos
   var dados = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
 
   var culturaEl = document.getElementById("admin_cultura");
@@ -209,6 +185,8 @@ function confirmarSenha() {
   document.getElementById("admin_hibrido_milho").value = dados.hibrido_milho || "";
   document.getElementById("admin_pmg_milho").value = dados.pmg_milho || "";
   document.getElementById("admin_pop_milho").value = dados.populacao_final_milho || "";
+
+  document.getElementById("adminOverlay").style.display = "block";
 }
 
 function salvarAdmin() {
@@ -588,17 +566,5 @@ document.addEventListener("DOMContentLoaded", function() {
 // ===============================
 
 function fecharAdmin() {
-  var modal = document.getElementById("adminModal");
-
-  // tenta fechar via Bootstrap
-  if (typeof bootstrap !== "undefined") {
-    var instance = bootstrap.Modal.getInstance(modal);
-    if (instance) {
-      instance.hide();
-      return;
-    }
-  }
-
-  // fallback Android (sem bootstrap)
-  modal.style.display = "none";
+  document.getElementById("adminOverlay").style.display = "none";
 }
