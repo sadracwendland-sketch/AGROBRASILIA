@@ -525,18 +525,18 @@ function formatarData(iso) {
 }
 
 // ===============================
-// CÁLCULO — fórmulas idênticas ao Excel
+// CÁLCULO — pesos dinâmicos por cultura (sempre somam 100 pontos)
 // ===============================
 function calcular(reg, reaisObj) {
   if (!reaisObj) return null;
   var cultura = reaisObj.cultura || "Ambas";
   var n = function(x) { return isNaN(x)||!isFinite(x) ? 0 : x; };
 
-  var vp = parseFloat(reg.vagens_planta)            || 0;
-  var gp = parseFloat(reg.graos_vagem)               || 0;
-  var pp = parseFloat(reg.produtividade_sc_ha)       || 0;
-  var ep = parseFloat(reg.graos_espiga_milho)        || 0;
-  var mp = parseFloat(reg.produtividade_milho_sc_ha) || 0;
+  var vp = parseFloat(reg.vagens_planta)             || 0;
+  var gp = parseFloat(reg.graos_vagem)                || 0;
+  var pp = parseFloat(reg.produtividade_sc_ha)        || 0;
+  var ep = parseFloat(reg.graos_espiga_milho)         || 0;
+  var mp = parseFloat(reg.produtividade_milho_sc_ha)  || 0;
 
   var vr = reaisObj.vagens    || 1;
   var gr = reaisObj.graos     || 1;
@@ -546,18 +546,32 @@ function calcular(reg, reaisObj) {
 
   var eV=(vp-vr)/vr, eG=(gp-gr)/gr, eP=(pp-pr)/pr, eE=(ep-er)/er, eM=(mp-mr)/mr;
 
+  // Pesos dinâmicos conforme cultura — sempre somam 100 pontos
+  var wV, wG, wP, wE, wM;
+  if (cultura === "Soja") {
+    wV=20; wG=20; wP=60; wE= 0; wM= 0;  // 20+20+60 = 100
+  } else if (cultura === "Milho") {
+    wV= 0; wG= 0; wP= 0; wE=30; wM=70;  // 30+70 = 100
+  } else {                                // Ambas
+    wV=10; wG=10; wP=40; wE=10; wM=30;  // 10+10+40+10+30 = 100
+  }
+
+  // Desclassificação: qualquer erro POSITIVO > 20% nas culturas ativas
   var desc = false;
-  if (cultura==="Soja"||cultura==="Ambas") { if(eV>0.2||eG>0.2||eP>0.2) desc=true; }
-  if (cultura==="Milho")                   { if(eE>0.2||eM>0.2) desc=true; }
+  if (cultura === "Soja"  || cultura === "Ambas") { if (eV>0.2||eG>0.2||eP>0.2) desc=true; }
+  if (cultura === "Milho" || cultura === "Ambas") { if (eE>0.2||eM>0.2)         desc=true; }
   var status = desc ? "DESCLASSIFICADO" : "CLASSIFICADO";
 
-  var pV=(desc||cultura==="Milho")?0:n((1-eV)*10);
-  var pG=(cultura==="Milho")?0:n((1-eG)*10);
-  var pP=(desc||cultura==="Milho")?0:n((1-eP)*40);
-  var pE=(desc||cultura==="Soja")?0:n((1-eE)*10);
-  var pM=(desc||cultura==="Soja")?0:n((1-eM)*30);
-  var total=pV+pG+pP+pE+pM;
-  return { status, eV, eG, eP, eE, eM, pV, pG, pP, pE, pM, total, classificada: desc?0:total };
+  // Pontuação por componente com peso dinâmico
+  var pV = wV > 0 ? n((1-eV)*wV) : 0;
+  var pG = wG > 0 ? n((1-eG)*wG) : 0;
+  var pP = wP > 0 ? n((1-eP)*wP) : 0;
+  var pE = wE > 0 ? n((1-eE)*wE) : 0;
+  var pM = wM > 0 ? n((1-eM)*wM) : 0;
+
+  var total = pV+pG+pP+pE+pM;
+  return { status, eV, eG, eP, eE, eM, pV, pG, pP, pE, pM, total,
+           classificada: desc ? 0 : total };
 }
 
 function getReaisParaReg(reg) {
