@@ -506,7 +506,7 @@ async function sincronizar() {
     // Carrega registros de participantes
     var regs = await sbGet("stine_coletas",
       "select=*&local_evento=eq." + LOCAL_EVENTO + "&order=data_hora.asc");
-    REGS = regs || [];
+    REGS = deduplicarRegs(regs || []);
 
     // Carrega desclassificações manuais
     var desclass = await sbGet("stine_desclassificados",
@@ -688,6 +688,22 @@ function dataDeISO(iso) {
 function formatarData(iso) {
   var d = dataDeISO(iso); if (!d) return "—";
   return d.split("-").reverse().join("/");
+}
+
+
+// Deduplica registros por hash_registro (fallback: nome+telefone+data)
+function deduplicarRegs(regs) {
+  var vistos = {};
+  return regs.filter(function(reg) {
+    var chave = reg.hash_registro ||
+      ((reg.nome||"").toLowerCase().replace(/ /g,"") + "|" +
+       (reg.telefone||"").replace(/[^0-9]/g,"") + "|" +
+       (reg.data_hora||"").slice(0,10) + "|" +
+       (reg.local_evento||""));
+    if (vistos[chave]) return false;
+    vistos[chave] = true;
+    return true;
+  });
 }
 
 // ===============================

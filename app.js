@@ -56,6 +56,13 @@ function gerarHashRegistro(payload) {
   return btoa(payload.Nome + payload.Telefone + payload.produtividade_sc_ha + payload.produtividade_milho_sc_ha);
 }
 
+function gerarHashSupabase(payload) {
+  var nome = (payload.Nome || '').toLowerCase().replace(/ /g,'');
+  var tel  = (payload.Telefone || '').replace(/[^0-9]/g,'');
+  var data = (payload.DataHora || '').slice(0,10);
+  return btoa(encodeURIComponent(nome + '|' + tel + '|' + data + '|' + LOCAL_EVENTO));
+}
+
 // ===============================
 // CULTURA ATIVA
 // ===============================
@@ -276,15 +283,16 @@ async function salvarNoSupabase(payload) {
       graos_vagem:              payload.graos_vagem              || "",
       produtividade_sc_ha:      payload.produtividade_sc_ha      || "",
       graos_espiga_milho:       payload.graos_espiga_milho       || "",
-      produtividade_milho_sc_ha: payload.produtividade_milho_sc_ha || ""
+      produtividade_milho_sc_ha: payload.produtividade_milho_sc_ha || "",
+      hash_registro: gerarHashSupabase(payload)
     };
-    await fetch(SUPABASE_URL + "/rest/v1/stine_coletas", {
+    await fetch(SUPABASE_URL + "/rest/v1/stine_coletas?on_conflict=local_evento,hash_registro", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
         "Authorization": "Bearer " + SUPABASE_KEY,
-        "Prefer": "return=minimal"
+        "Prefer": "resolution=ignore-duplicates,return=minimal"
       },
       body: JSON.stringify(row)
     });
@@ -331,6 +339,11 @@ var stineForm = el("stineForm");
 if (stineForm) {
   stineForm.addEventListener("submit", async function(e) {
     e.preventDefault();
+    var btnEnviar = stineForm.querySelector("button[type='submit']");
+    if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.textContent = 'Enviando...'; }
+    var reativarBtn = function() {
+      if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar participação'; }
+    };
     var payload = {
       DataHora: new Date().toISOString(), Local: LOCAL_EVENTO,
       Segue_Redes:           stineForm.segue            ? stineForm.segue.value            : "",
@@ -392,6 +405,7 @@ if (stineForm) {
     }
     limparFormularioPreservandoAdmin();
     atualizarStatusConexao();
+    reativarBtn();
   });
 }
 
