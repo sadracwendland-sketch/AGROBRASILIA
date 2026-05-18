@@ -80,6 +80,7 @@
     <button class="tab-btn" onclick="abrirTab('Ranking')">🏆 Ranking</button>
     <button class="tab-btn" onclick="abrirTab('Exportar')">📥 Exportar</button>
     <button class="tab-btn" onclick="abrirTab('Config')">⚙️ Configurações</button>
+    <button class="tab-btn" onclick="abrirTab('Inscritos')">📋 Inscritos</button>
   </div>
 
   <!-- TAB VALORES POR DIA -->
@@ -325,6 +326,13 @@
       </div>
 
       <hr class="my-4">
+      <div class="card border-warning mb-4">
+        <div class="card-header text-warning fw-bold py-2">⛔ Desclassificados Manualmente</div>
+        <div class="card-body">
+          <p class="text-muted" style="font-size:.88rem;">Participantes removidos do ranking manualmente. Clique em "Reintegrar" para devolver ao ranking.</p>
+          <div id="listaDesclassManual"></div>
+        </div>
+      </div>
       <div class="row g-3">
         <div class="col-md-6">
           <div class="card border-danger">
@@ -353,6 +361,72 @@
 </div>
 </div>
 
+
+<!-- MODAL CONTATO -->
+<div id="modalContato" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:19999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:92%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h5 style="margin:0;">📋 Dados do Participante</h5>
+      <button onclick="fecharModalContato()" style="background:none;border:none;font-size:1.6rem;line-height:1;cursor:pointer;color:#666;">×</button>
+    </div>
+    <div id="modalContatoConteudo"></div>
+    <div id="modalDesclassificadoAviso" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px;margin-top:12px;font-size:.88rem;">
+      ⚠️ <strong>Desclassificado manualmente.</strong><br>
+      <span id="modalDesclassMotivo" style="color:#666;"></span>
+    </div>
+    <hr style="margin:14px 0 10px;">
+    <div id="secaoDesclassificar">
+      <button id="btnAbrirDesclass" class="btn btn-outline-danger btn-sm w-100" style="cursor:pointer;">⛔ Desclassificar este participante</button>
+      <div id="formDesclass" style="display:none;margin-top:10px;">
+        <label style="font-size:.88rem;font-weight:bold;">Motivo:</label>
+        <textarea id="motivoDesclass" class="form-control mb-2" rows="2" placeholder="Ex: Não atende requisito..." style="font-size:.88rem;"></textarea>
+        <label style="font-size:.88rem;font-weight:bold;">Senha:</label>
+        <input type="password" id="senhaDesclass" class="form-control mb-2" placeholder="Senha administrativa">
+        <div id="erroDesclass" style="display:none;color:#dc3545;font-size:.85rem;margin-bottom:6px;">❌ Senha incorreta.</div>
+        <div class="d-flex gap-2">
+          <button id="btnConfirmarDesclass" class="btn btn-danger flex-grow-1 btn-sm" style="cursor:pointer;">Confirmar</button>
+          <button onclick="el('formDesclass').style.display='none'" class="btn btn-secondary btn-sm" style="cursor:pointer;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div id="secaoReintegrar" style="display:none;">
+      <button id="btnReintegrar" class="btn btn-outline-success btn-sm w-100" style="cursor:pointer;">✅ Reintegrar ao ranking</button>
+      <div id="formReintegrar" style="display:none;margin-top:10px;">
+        <label style="font-size:.88rem;font-weight:bold;">Senha:</label>
+        <input type="password" id="senhaReintegrar" class="form-control mb-2" placeholder="Senha administrativa">
+        <div id="erroReintegrar" style="display:none;color:#dc3545;font-size:.85rem;margin-bottom:6px;">❌ Senha incorreta.</div>
+        <div class="d-flex gap-2">
+          <button id="btnConfirmarReintegrar" class="btn btn-success flex-grow-1 btn-sm" style="cursor:pointer;">Confirmar reintegração</button>
+          <button onclick="el('formReintegrar').style.display='none'" class="btn btn-secondary btn-sm" style="cursor:pointer;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle mb-0" style="font-size:.8rem;min-width:1200px;">
+          <thead class="table-success">
+            <tr>
+              <th>Data</th><th>Nome</th><th>Cargo</th><th>Empresa/Fazenda</th>
+              <th>Telefone</th><th>E-mail</th><th>Cidade</th><th>UF</th>
+              <th>Área (ha)</th><th>Planta Stine</th><th>Qual Stine</th>
+              <th>Fornecedor</th><th>Segue Redes</th><th>LGPD</th>
+              <th>Variedade</th><th>Pop.Soja</th><th>Híbrido</th>
+              <th>PMG</th><th>Pop.Milho</th>
+              <th>Vagens</th><th>Grãos</th><th>Prod.Soja</th>
+              <th>Gr.Espiga</th><th>Prod.Milho</th><th>Pontuação</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbInscritos"></tbody>
+        </table>
+      </div>
+      <div class="mt-2 text-muted" style="font-size:.82rem;" id="totalInscritos"></div>
+    </div>
+  </div>
+
+</div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ===============================
@@ -366,6 +440,7 @@ const SB_HEADERS   = { "Content-Type":"application/json", "apikey":SB_KEY, "Auth
 
 // Dados em memória (carregados do Supabase)
 var REGS  = [];   // registros de participantes
+var DESCLASS_MANUAL = [];
 var REAIS = {};   // { "2026-05-14": { cultura, varSoja, vagens, graos, prod, hibrido, espiga, prodMilho } }
 
 // ===============================
@@ -433,6 +508,11 @@ async function sincronizar() {
       "select=*&local_evento=eq." + LOCAL_EVENTO + "&order=data_hora.asc");
     REGS = regs || [];
 
+    // Carrega desclassificações manuais
+    var desclass = await sbGet("stine_desclassificados",
+      "select=*&local_evento=eq." + LOCAL_EVENTO);
+    DESCLASS_MANUAL = desclass || [];
+
     // Carrega valores reais
     var reais = await sbGet("stine_valores_reais",
       "select=*&local_evento=eq." + LOCAL_EVENTO + "&order=data.asc");
@@ -498,6 +578,8 @@ function abrirTab(nome) {
     if (b.getAttribute("onclick") && b.getAttribute("onclick").indexOf(nome) !== -1) b.classList.add("ativo");
   });
   if (nome === "Ranking")  renderRanking();
+  if (nome === "Inscritos") { popularFiltrosInscritoDias(); renderInscritos(); }
+  if (nome === "Config") renderListaDesclassManual();
   if (nome === "Exportar") { popularFiltrosDias(); el("totalRegs").textContent = REGS.length; }
 }
 
@@ -609,6 +691,19 @@ function formatarData(iso) {
 }
 
 // ===============================
+// DESCLASSIFICAÇÃO MANUAL
+// ===============================
+function estaDesclassificadoManual(reg) {
+  var id = reg.id || "";
+  return DESCLASS_MANUAL.some(function(d) { return d.registro_id === id; });
+}
+function getMotivoDesclass(reg) {
+  var id = reg.id || "";
+  var d  = DESCLASS_MANUAL.find(function(d) { return d.registro_id === id; });
+  return d ? (d.motivo || "Sem motivo") : "";
+}
+
+// ===============================
 // CÁLCULO — pesos dinâmicos por cultura (sempre somam 100 pontos)
 // ===============================
 function calcular(reg, reaisObj) {
@@ -663,14 +758,15 @@ function getReaisParaReg(reg) {
 // ===============================
 // STATS
 // ===============================
-function atualizarStats() {
+function atualizarStats(regsParam) {
+  var regs = regsParam !== undefined ? regsParam : REGS;
   var totalHa=0, classified=0, desclass=0;
-  REGS.forEach(function(reg) {
+  regs.forEach(function(reg) {
     totalHa += parseFloat(reg.area_soja_ha)||0;
     var ro = getReaisParaReg(reg);
     if (ro) { var c=calcular(reg,ro); if(c){ if(c.status==="CLASSIFICADO") classified++; else desclass++; } }
   });
-  el("sTotal").textContent    = REGS.length;
+  el("sTotal").textContent    = regs.length;
   el("sClass").textContent    = classified;
   el("sDesclass").textContent = desclass;
   el("sHa").textContent       = totalHa.toLocaleString("pt-BR");
@@ -723,6 +819,9 @@ function renderRanking() {
   var regs=filtrarRegs(periodo,diaVal,iniVal,fimVal);
   var temReais=Object.keys(REAIS).length>0;
 
+  // Atualiza stats com os dados do filtro atual
+  atualizarStats(regs);
+
   el("avSemReais").style.display=(!temReais)?"block":"none";
   el("avSemDados").style.display=(regs.length===0)?"block":"none";
   if(!temReais||regs.length===0){ tbody.innerHTML=""; return; }
@@ -739,7 +838,7 @@ function renderRanking() {
     return b.c.classificada-a.c.classificada;
   });
 
-  var topN=comScore.filter(function(x){ return x.c&&x.c.status==="CLASSIFICADO"; }).slice(0,n);
+  var topN=comScore.filter(function(x){ return x.c&&x.c.status==="CLASSIFICADO"&&!estaDesclassificadoManual(x.reg); }).slice(0,n);
   tbody.innerHTML="";
   if(!topN.length){
     tbody.innerHTML="<tr><td colspan='7' class='text-center text-muted py-3'>Nenhum classificado no período.</td></tr>";
@@ -750,9 +849,12 @@ function renderRanking() {
     var medal=pos===1?"🥇":pos===2?"🥈":pos===3?"🥉":pos+"º";
     var cls=pos===1?"rank-1":pos===2?"rank-2":pos===3?"rank-3":"";
     var tr=document.createElement("tr"); tr.className=cls;
+    tr.style.cursor="pointer";
+    tr.title="Clique para ver dados de contato";
+    tr.onclick=(function(r){ return function(){ abrirModalContato(r); }; })(reg);
     tr.innerHTML=
       "<td class='text-center fw-bold'>"+medal+"</td>"+
-      "<td><strong>"+(reg.nome||"—")+"</strong><br><small class='text-muted'>"+(reg.empresa_fazenda||"")+"</small></td>"+
+      "<td><strong style='color:#0a7c2f;text-decoration:underline dotted;'>"+(reg.nome||"—")+"</strong><br><small class='text-muted'>"+(reg.empresa_fazenda||"")+"</small></td>"+
       "<td>"+(reg.cidade||"—")+" / "+(reg.uf||"—")+"</td>"+
       "<td class='text-center'>"+((parseFloat(reg.area_soja_ha)||0).toLocaleString("pt-BR"))+"</td>"+
       "<td class='text-center'>"+formatarData(reg.data_hora)+"</td>"+
@@ -938,6 +1040,177 @@ el("btnResetPesos").onclick = function() {
   renderRanking();
   atualizarStats();
 };
+
+
+// ===============================
+// MODAL CONTATO + DESCLASSIFICAÇÃO MANUAL
+// ===============================
+var _regAtual = null;
+
+function fecharModalContato() {
+  el("modalContato").style.display = "none";
+  el("formDesclass").style.display = "none";
+  el("formReintegrar").style.display = "none";
+  el("erroDesclass").style.display = "none";
+  el("erroReintegrar").style.display = "none";
+  if (el("motivoDesclass"))  el("motivoDesclass").value  = "";
+  if (el("senhaDesclass"))   el("senhaDesclass").value   = "";
+  if (el("senhaReintegrar")) el("senhaReintegrar").value = "";
+  _regAtual = null;
+}
+
+function abrirModalContato(reg) {
+  _regAtual = reg;
+  var html =
+    '<div style="display:grid;grid-template-columns:110px 1fr;gap:8px;font-size:.9rem;">' +
+    '<span style="color:#666;">Nome</span><strong>'+(reg.nome||"—")+'</strong>' +
+    '<span style="color:#666;">Cidade</span><span>'+(reg.cidade||"—")+'</span>' +
+    '<span style="color:#666;">Estado</span><span>'+(reg.uf||"—")+'</span>' +
+    '<span style="color:#666;">Telefone</span><span>'+(reg.telefone||"—")+'</span>' +
+    '<span style="color:#666;">E-mail</span><span style="word-break:break-all;">'+(reg.email||"—")+'</span>' +
+    '<span style="color:#666;">Empresa</span><span>'+(reg.empresa_fazenda||"—")+'</span>' +
+    '</div>';
+  el("modalContatoConteudo").innerHTML = html;
+
+  var jaDesclass = estaDesclassificadoManual(reg);
+  el("modalDesclassificadoAviso").style.display = jaDesclass ? "block" : "none";
+  if (jaDesclass) el("modalDesclassMotivo").textContent = "Motivo: " + getMotivoDesclass(reg);
+  el("secaoDesclassificar").style.display = jaDesclass ? "none"  : "block";
+  el("secaoReintegrar").style.display     = jaDesclass ? "block" : "none";
+  el("formDesclass").style.display   = "none";
+  el("formReintegrar").style.display = "none";
+  el("erroDesclass").style.display   = "none";
+  el("erroReintegrar").style.display = "none";
+  el("modalContato").style.display = "flex";
+}
+
+el("btnAbrirDesclass").onclick = function() {
+  el("formDesclass").style.display = "block";
+  if (el("motivoDesclass")) el("motivoDesclass").focus();
+};
+el("btnReintegrar").onclick = function() {
+  el("formReintegrar").style.display = "block";
+  if (el("senhaReintegrar")) el("senhaReintegrar").focus();
+};
+
+el("btnConfirmarDesclass").onclick = async function() {
+  if (el("senhaDesclass").value !== SENHA) {
+    el("erroDesclass").style.display = "block";
+    el("senhaDesclass").value = ""; return;
+  }
+  var motivo = el("motivoDesclass").value.trim() || "Sem motivo informado";
+  try {
+    await sbUpsert("stine_desclassificados", {
+      local_evento: LOCAL_EVENTO, registro_id: _regAtual.id,
+      nome: _regAtual.nome||"", motivo: motivo
+    }, "local_evento,registro_id");
+    fecharModalContato();
+    await sincronizar();
+  } catch(e) { alert("Erro: "+e.message); }
+};
+
+el("btnConfirmarReintegrar").onclick = async function() {
+  if (el("senhaReintegrar").value !== SENHA) {
+    el("erroReintegrar").style.display = "block";
+    el("senhaReintegrar").value = ""; return;
+  }
+  try {
+    await sbDelete("stine_desclassificados",
+      "local_evento=eq."+LOCAL_EVENTO+"&registro_id=eq."+_regAtual.id);
+    fecharModalContato();
+    await sincronizar();
+  } catch(e) { alert("Erro: "+e.message); }
+};
+
+// ===============================
+// LISTA DESCLASSIFICADOS MANUAIS (Config)
+// ===============================
+function renderListaDesclassManual() {
+  var div = el("listaDesclassManual"); if (!div) return;
+  if (!DESCLASS_MANUAL.length) {
+    div.innerHTML = "<p class='text-muted'>Nenhum participante desclassificado manualmente.</p>"; return;
+  }
+  div.innerHTML = DESCLASS_MANUAL.map(function(d) {
+    var reg = REGS.find(function(r) { return r.id === d.registro_id; }) || { id: d.registro_id, nome: d.nome };
+    return '<div style="border:1px solid #ffc107;border-radius:6px;padding:10px;margin-bottom:8px;background:#fff3cd;">' +
+      '<div class="d-flex justify-content-between align-items-center">' +
+      '<strong>'+(d.nome||"—")+'</strong>' +
+      '<button class="btn btn-sm btn-outline-success" style="cursor:pointer;" onclick=\''+
+        'abrirModalContato('+JSON.stringify(reg)+')\'>' +
+      '✅ Reintegrar</button></div>' +
+      '<div style="color:#666;margin-top:4px;font-size:.85rem;">Motivo: '+(d.motivo||"Sem motivo")+'</div>' +
+      '</div>';
+  }).join("");
+}
+
+// ===============================
+// FILTRO ABA INSCRITOS
+// ===============================
+function onIFiltroPeriodo() {
+  var p = el("iPeriodo").value;
+  el("iDiaCol").style.display = (p==="dia")   ? "block" : "none";
+  el("iIniCol").style.display = (p==="range") ? "block" : "none";
+  el("iFimCol").style.display = (p==="range") ? "block" : "none";
+  popularFiltrosDias();
+  renderInscritos();
+}
+
+function popularFiltrosInscritoDias() {
+  var dias = [];
+  REGS.forEach(function(r) { var d=dataDeISO(r.data_hora); if(d && !dias.includes(d)) dias.push(d); });
+  dias.sort();
+  var sel = el("iDia"); if (!sel) return;
+  sel.innerHTML = dias.map(function(d){ return '<option value="'+d+'">'+d.split("-").reverse().join("/")+'</option>'; }).join("");
+}
+
+// ===============================
+// RENDERIZAR ABA INSCRITOS
+// ===============================
+function renderInscritos() {
+  var periodo = el("iPeriodo").value;
+  var diaVal  = el("iDia")  ? el("iDia").value  : "";
+  var iniVal  = el("iIni")  ? el("iIni").value  : "";
+  var fimVal  = el("iFim")  ? el("iFim").value  : "";
+  var regs    = filtrarRegs(periodo, diaVal, iniVal, fimVal);
+  var tbody   = el("tbInscritos");
+  if (!tbody) return;
+
+  if (!regs.length) {
+    tbody.innerHTML = "<tr><td colspan='26' class='text-center text-muted py-3'>Nenhum inscrito no período.</td></tr>";
+    el("totalInscritos").textContent = "";
+    return;
+  }
+
+  tbody.innerHTML = regs.map(function(reg) {
+    var ro = getReaisParaReg(reg);
+    var c  = ro ? calcular(reg, ro) : null;
+    var pond = estaDesclassificadoManual(reg);
+    var pont = (c&&!pond) ? c.classificada.toFixed(2) : "—";
+    var stat = pond ? "<span class='badge-d' title='"+getMotivoDesclass(reg)+"'>DESCLASS.MANUAL</span>"
+      : c ? (c.status==="CLASSIFICADO" ? "<span class='badge-c'>CLASSIFICADO</span>" : "<span class='badge-d'>DESCLASSIFICADO</span>") : "—";
+    return "<tr>" + [
+      formatarData(reg.data_hora),
+      "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;' onclick='abrirModalContato("+JSON.stringify(reg).replace(/'/g,"\'")+")'><strong>"+(reg.nome||"—")+"</strong></span>",
+      reg.cargo||"", reg.empresa_fazenda||"",
+      reg.telefone||"", reg.email||"",
+      reg.cidade||"", reg.uf||"",
+      reg.area_soja_ha||"",
+      reg.planta_stine||"", reg.qual_stine||"",
+      reg.fornecedor_semente||"",
+      reg.segue_redes||"", reg.aceite_lgpd||"",
+      reg.variedade_soja||"", reg.populacao_final_soja||"",
+      reg.hibrido_milho||"", reg.pmg_milho||"",
+      reg.populacao_final_milho||"",
+      reg.vagens_planta||"", reg.graos_vagem||"",
+      reg.produtividade_sc_ha||"",
+      reg.graos_espiga_milho||"", reg.produtividade_milho_sc_ha||"",
+      pont, stat
+    ].map(function(v,i){ return "<td>"+(i===1?v:"<span style='white-space:nowrap;'>"+v+"</span>")+"</td>"; }).join("") + "</tr>";
+  }).join("");
+
+  el("totalInscritos").textContent = regs.length + " inscrito(s) no período selecionado.";
+}
+
 </script>
 </body>
 </html>
