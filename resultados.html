@@ -635,18 +635,20 @@ function calcular(reg, reaisObj) {
   var wObj  = cultura==="Soja" ? pesos.soja : cultura==="Milho" ? pesos.milho : pesos.ambas;
   var wV=wObj.wV, wG=wObj.wG, wP=wObj.wP, wE=wObj.wE, wM=wObj.wM;
 
-  // Desclassificação: qualquer erro POSITIVO > 20% nas culturas ativas
+  // Desclassificação: erro absoluto > 20% em qualquer variável ativa (acima OU abaixo do real)
   var desc = false;
-  if (cultura === "Soja"  || cultura === "Ambas") { if (eV>0.2||eG>0.2||eP>0.2) desc=true; }
-  if (cultura === "Milho" || cultura === "Ambas") { if (eE>0.2||eM>0.2)         desc=true; }
+  if (cultura === "Soja"  || cultura === "Ambas") { if (Math.abs(eV)>0.2||Math.abs(eG)>0.2||Math.abs(eP)>0.2) desc=true; }
+  if (cultura === "Milho" || cultura === "Ambas") { if (Math.abs(eE)>0.2||Math.abs(eM)>0.2)                   desc=true; }
   var status = desc ? "DESCLASSIFICADO" : "CLASSIFICADO";
 
-  // Pontuação por componente com peso dinâmico
-  var pV = wV > 0 ? n((1-eV)*wV) : 0;
-  var pG = wG > 0 ? n((1-eG)*wG) : 0;
-  var pP = wP > 0 ? n((1-eP)*wP) : 0;
-  var pE = wE > 0 ? n((1-eE)*wE) : 0;
-  var pM = wM > 0 ? n((1-eM)*wM) : 0;
+  // Pontuação: usa módulo do erro — desvio em qualquer direção desconta pontos
+  // Math.max(0,...) garante que nunca fica negativo
+  // Máximo possível = peso do componente (quando erro = 0, acerto perfeito)
+  var pV = wV > 0 ? Math.max(0, n((1 - Math.abs(eV)) * wV)) : 0;
+  var pG = wG > 0 ? Math.max(0, n((1 - Math.abs(eG)) * wG)) : 0;
+  var pP = wP > 0 ? Math.max(0, n((1 - Math.abs(eP)) * wP)) : 0;
+  var pE = wE > 0 ? Math.max(0, n((1 - Math.abs(eE)) * wE)) : 0;
+  var pM = wM > 0 ? Math.max(0, n((1 - Math.abs(eM)) * wM)) : 0;
 
   var total = pV+pG+pP+pE+pM;
   return { status, eV, eG, eP, eE, eM, pV, pG, pP, pE, pM, total,
