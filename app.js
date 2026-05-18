@@ -132,8 +132,33 @@ function salvarAdmin() {
     populacao_final_milho: el("admin_pop_milho")      ? el("admin_pop_milho").value      : ""
   };
   if (!dados.cultura) dados.cultura = "Ambas";
+
+  // Salva localStorage (imediato — funciona offline)
   localStorage.setItem(STORAGE_ADMIN, JSON.stringify(dados));
   carregarParametrosAdmin();
+
+  // Salva no Supabase — todos os aparelhos com o link carregam automaticamente
+  if (navigator.onLine) {
+    fetch(SUPABASE_URL + "/rest/v1/stine_config?on_conflict=local_evento", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "Prefer": "resolution=merge-duplicates,return=minimal"
+      },
+      body: JSON.stringify({
+        local_evento:          LOCAL_EVENTO,
+        cultura:               dados.cultura,
+        variedade_soja:        dados.variedade_soja,
+        populacao_final_soja:  dados.populacao_final_soja,
+        hibrido_milho:         dados.hibrido_milho,
+        pmg_milho:             dados.pmg_milho,
+        populacao_final_milho: dados.populacao_final_milho
+      })
+    }).catch(function(e) { console.warn("Supabase config save:", e); });
+  }
+
   if (el("msgAdminSucesso")) {
     el("msgAdminSucesso").style.display = "block";
     setTimeout(function() {
@@ -144,7 +169,6 @@ function salvarAdmin() {
     fecharAdmin();
   }
 }
-
 function fecharAdmin() {
   if (el("adminSection")) el("adminSection").style.display = "none";
 }
@@ -152,31 +176,62 @@ function fecharAdmin() {
 // ===============================
 // CARREGAR PARÂMETROS ADMIN
 // ===============================
-function carregarParametrosAdmin() {
-  var dados = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
+
+// Aplica dados na tela (hidden inputs + textos exibidos)
+function aplicarDadosAdmin(dados) {
+  if (!dados) return;
   if (dados.variedade_soja) {
-    if (el("variedade_soja"))       el("variedade_soja").value            = dados.variedade_soja;
-    if (el("variedadeSojaText"))    el("variedadeSojaText").innerText     = dados.variedade_soja;
+    if (el("variedade_soja"))         el("variedade_soja").value              = dados.variedade_soja;
+    if (el("variedadeSojaText"))      el("variedadeSojaText").innerText       = dados.variedade_soja;
   }
   if (dados.populacao_final_soja) {
-    if (el("populacao_final_soja"))  el("populacao_final_soja").value     = dados.populacao_final_soja;
-    if (el("populacaoFinalSojaText")) el("populacaoFinalSojaText").innerText = dados.populacao_final_soja;
+    if (el("populacao_final_soja"))   el("populacao_final_soja").value        = dados.populacao_final_soja;
+    if (el("populacaoFinalSojaText")) el("populacaoFinalSojaText").innerText  = dados.populacao_final_soja;
   }
   if (dados.hibrido_milho) {
-    if (el("hibrido_milho"))        el("hibrido_milho").value             = dados.hibrido_milho;
-    if (el("hibridoMilhoText"))     el("hibridoMilhoText").innerText      = dados.hibrido_milho;
+    if (el("hibrido_milho"))          el("hibrido_milho").value               = dados.hibrido_milho;
+    if (el("hibridoMilhoText"))       el("hibridoMilhoText").innerText        = dados.hibrido_milho;
   }
   if (dados.pmg_milho) {
-    if (el("pmg_milho"))            el("pmg_milho").value                 = dados.pmg_milho;
-    if (el("pmgMilhoText"))         el("pmgMilhoText").innerText          = dados.pmg_milho;
+    if (el("pmg_milho"))              el("pmg_milho").value                   = dados.pmg_milho;
+    if (el("pmgMilhoText"))           el("pmgMilhoText").innerText            = dados.pmg_milho;
   }
   if (dados.populacao_final_milho) {
-    if (el("populacao_final_milho"))  el("populacao_final_milho").value   = dados.populacao_final_milho;
-    if (el("populacaoFinalMilhoText")) el("populacaoFinalMilhoText").innerText = dados.populacao_final_milho;
+    if (el("populacao_final_milho"))  el("populacao_final_milho").value       = dados.populacao_final_milho;
+    if (el("populacaoFinalMilhoText"))el("populacaoFinalMilhoText").innerText = dados.populacao_final_milho;
   }
   aplicarCulturaAtiva(dados.cultura || "Ambas");
 }
 
+// Carrega do localStorage (imediato) e atualiza do Supabase em background
+function carregarParametrosAdmin() {
+  // 1. Aplica localStorage imediatamente — funciona offline
+  var local = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
+  aplicarDadosAdmin(local);
+
+  // 2. Busca do Supabase em background — qualquer aparelho com o link recebe automaticamente
+  if (navigator.onLine) {
+    fetch(SUPABASE_URL + "/rest/v1/stine_config?select=*&local_evento=eq." + LOCAL_EVENTO + "&limit=1", {
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      if (!rows || !rows.length) return;
+      var row   = rows[0];
+      var dados = {
+        cultura:               row.cultura               || "Ambas",
+        variedade_soja:        row.variedade_soja        || "",
+        populacao_final_soja:  row.populacao_final_soja  || "",
+        hibrido_milho:         row.hibrido_milho         || "",
+        pmg_milho:             row.pmg_milho             || "",
+        populacao_final_milho: row.populacao_final_milho || ""
+      };
+      localStorage.setItem(STORAGE_ADMIN, JSON.stringify(dados));
+      aplicarDadosAdmin(dados);
+    })
+    .catch(function(e) { console.warn("Config Supabase: usando localStorage.", e); });
+  }
+}
 // ===============================
 // ENVIO — Power Automate
 // ===============================
