@@ -355,6 +355,7 @@ async function enviarFilaAutomatico() {
       if (!item.payload.graos_espiga_milho)        item.payload.graos_espiga_milho = "";
       if (!item.payload.produtividade_milho_sc_ha) item.payload.produtividade_milho_sc_ha = "";
       await enviarPayload(item.payload);
+      salvarNoSupabase(item.payload);
       await new Promise(function(r) { setTimeout(r, 300); });
       enviados.push(item.hash); salvarLog("enviado", item.payload, "ok"); qtdEnviados++;
     } catch (erro) { console.error("Erro fila:", erro); restante.push(item); }
@@ -379,6 +380,7 @@ async function sincronizarOffline() {
       if (!item.payload.graos_espiga_milho)        item.payload.graos_espiga_milho = "";
       if (!item.payload.produtividade_milho_sc_ha) item.payload.produtividade_milho_sc_ha = "";
       await enviarPayload(item.payload);
+      salvarNoSupabase(item.payload);
       await new Promise(function(r) { setTimeout(r, 300); });
       enviados.push(item.hash); salvarLog("enviado", item.payload, "ok"); qtdEnviados++;
     } catch (e) { console.error("Erro sinc:", e); restante.push(item); }
