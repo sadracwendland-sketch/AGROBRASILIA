@@ -136,7 +136,19 @@
           <input class="form-check-input" type="radio" name="planta_stine" value="Não">
           <label class="form-check-label">Não</label>
         </div>
-        <input class="form-control mb-3" name="qual_stine" placeholder="Se sim, qual híbrido ou variedade?">
+        <!-- Multi-select variedades/híbridos Stine -->
+        <div class="mb-3" id="wrapQualStine" style="position:relative;">
+          <div id="dropQualStine" class="form-control d-flex justify-content-between align-items-center"
+               style="cursor:pointer;min-height:42px;user-select:none;-webkit-user-select:none;">
+            <span id="labelQualStine" style="color:#6c757d;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;max-width:90%;">
+              Selecione o(s) híbrido(s) / variedade(s)
+            </span>
+            <span style="font-size:.75rem;margin-left:6px;">▼</span>
+          </div>
+          <div id="opcoesQualStine" style="display:none;position:absolute;left:0;right:0;border:1px solid #ced4da;border-radius:4px;background:#fff;max-height:230px;overflow-y:auto;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,.15);">
+          </div>
+          <input type="hidden" name="qual_stine" id="qual_stine_hidden">
+        </div>
         <input class="form-control" name="fornecedor_semente" placeholder="De quem você compra sua semente?" required>
       </div>
     </div>

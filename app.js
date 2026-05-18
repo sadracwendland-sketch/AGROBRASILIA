@@ -326,6 +326,7 @@ function limparFormularioPreservandoAdmin() {
   if (el("pmg_milho"))               el("pmg_milho").value                 = pmg;
   if (el("populacao_final_milho"))   el("populacao_final_milho").value     = pMilho;
   if (el("variedadeSojaText"))       el("variedadeSojaText").innerText     = vSoja;
+  limparMultiSelectStine();
   if (el("populacaoFinalSojaText"))  el("populacaoFinalSojaText").innerText  = pSoja;
   if (el("hibridoMilhoText"))        el("hibridoMilhoText").innerText      = hMilho;
   if (el("pmgMilhoText"))            el("pmgMilhoText").innerText          = pmg;
@@ -468,6 +469,67 @@ async function sincronizarOffline() {
 window.addEventListener("online",  function() { enviarFilaAutomatico(); atualizarStatusConexao(); });
 window.addEventListener("offline", function() { atualizarStatusConexao(); });
 
+
+// ===============================
+// MULTI-SELECT VARIEDADES STINE
+// ===============================
+var VARIEDADES_STINE = [
+  "STN 9801 VIP3","STN 9717 VIP3","STN 9610 VIP3","STN 9504 VIP3",
+  "STN 9505 PRO4","STN 9808 PRO4",
+  "53KA33","62EA12","68KA49","71KA72","76KA72","78KA42","79KA72","80KA72","84KA92"
+];
+
+function initMultiSelectStine() {
+  var cont = document.getElementById("opcoesQualStine");
+  var drop = document.getElementById("dropQualStine");
+  if (!cont || !drop) return;
+
+  cont.innerHTML = VARIEDADES_STINE.map(function(v) {
+    return '<label style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid #f2f2f2;font-size:.92rem;">' +
+      '<input type="checkbox" class="stine-check" value="' + v + '" style="cursor:pointer;width:16px;height:16px;"> ' + v + '</label>';
+  }).join("");
+
+  cont.querySelectorAll(".stine-check").forEach(function(cb) {
+    cb.addEventListener("change", atualizarSelecaoStine);
+  });
+
+  drop.addEventListener("click", function(e) {
+    e.stopPropagation();
+    cont.style.display = cont.style.display === "none" ? "block" : "none";
+  });
+
+  document.addEventListener("click", function(e) {
+    var wrap = document.getElementById("wrapQualStine");
+    if (wrap && !wrap.contains(e.target)) {
+      cont.style.display = "none";
+    }
+  });
+}
+
+function atualizarSelecaoStine() {
+  var checks = document.querySelectorAll("#opcoesQualStine .stine-check:checked");
+  var vals = Array.prototype.slice.call(checks).map(function(c) { return c.value; });
+  var hidden = document.getElementById("qual_stine_hidden");
+  var label  = document.getElementById("labelQualStine");
+  if (hidden) hidden.value = vals.join(", ");
+  if (label) {
+    if (vals.length === 0) {
+      label.style.color = "#6c757d";
+      label.textContent = "Selecione o(s) hibridо(s) / variedade(s)";
+    } else {
+      label.style.color = "#212529";
+      label.textContent = vals.join(", ");
+    }
+  }
+}
+
+function limparMultiSelectStine() {
+  document.querySelectorAll("#opcoesQualStine .stine-check").forEach(function(cb) {
+    cb.checked = false;
+  });
+  atualizarSelecaoStine();
+}
+
 // ===============================
 // INIT — único DOMContentLoaded
 // ===============================
@@ -476,6 +538,7 @@ document.addEventListener("DOMContentLoaded", function() {
   carregarParametrosAdmin();
   enviarFilaAutomatico();
   atualizarStatusConexao();
+  initMultiSelectStine();
 
   // Máscara telefone
   var tel = el("telefone");
