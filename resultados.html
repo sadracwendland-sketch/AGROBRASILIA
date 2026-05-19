@@ -439,7 +439,10 @@ const SB_KEY       = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const SB_HEADERS   = { "Content-Type":"application/json", "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY };
 
 // Dados em memória (carregados do Supabase)
-var REGS  = [];   // registros de participantes
+var REGS  = [];
+var _rankingRegs = [];
+var _listaRegs = [];
+var _inscritosRegs = [];   // registros de participantes
 var DESCLASS_MANUAL = [];
 var REAIS = {};   // { "2026-05-14": { cultura, varSoja, vagens, graos, prod, hibrido, espiga, prodMilho } }
 
@@ -502,18 +505,29 @@ async function sbDelete(table, params) {
 async function sincronizar() {
   el("btnSync").innerHTML = '<span class="spin">🔄</span> Sincronizando...';
   el("lblSync").textContent = "";
+  el("lblSync").style.color = "#888";
+
+  // Cada fetch independente — falha em uma não aborta as outras
   try {
-    // Carrega registros de participantes
     var regs = await sbGet("stine_coletas",
       "select=*&local_evento=eq." + LOCAL_EVENTO + "&order=data_hora.asc");
     REGS = deduplicarRegs(regs || []);
+  } catch(e) {
+    console.error("stine_coletas erro:", e);
+    el("lblSync").textContent = "❌ Erro participantes: " + e.message;
+    el("lblSync").style.color = "#dc3545";
+  }
 
-    // Carrega desclassificações manuais
+  try {
     var desclass = await sbGet("stine_desclassificados",
       "select=*&local_evento=eq." + LOCAL_EVENTO);
     DESCLASS_MANUAL = desclass || [];
+  } catch(e) {
+    console.warn("stine_desclassificados: rode schema_desclassificados.sql", e);
+    DESCLASS_MANUAL = [];
+  }
 
-    // Carrega valores reais
+  try {
     var reais = await sbGet("stine_valores_reais",
       "select=*&local_evento=eq." + LOCAL_EVENTO + "&order=data.asc");
     REAIS = {};
@@ -529,19 +543,23 @@ async function sincronizar() {
         prodMilho: row.prod_milho || 0
       };
     });
-
-    var agora = new Date().toLocaleTimeString("pt-BR");
-    el("lblSync").textContent = "Atualizado às " + agora;
-    atualizarStats();
-    renderListaDias();
-    popularFiltrosDias();
-    renderRanking();
-    el("totalRegs").textContent = REGS.length;
   } catch(e) {
-    el("lblSync").textContent = "❌ Erro: " + e.message;
-    el("lblSync").style.color = "#dc3545";
-    console.error("Sincronizar erro:", e);
+    console.warn("stine_valores_reais erro:", e);
+    REAIS = {};
   }
+
+  // Renderiza sempre — independente de falhas parciais
+  if (!el("lblSync").textContent.startsWith("❌")) {
+    el("lblSync").textContent = "Atualizado (" + REGS.length + " registros)";
+  }
+  atualizarStats();
+  renderListaDias();
+  popularFiltrosDias();
+  renderRanking();
+  renderInscritos();
+  popularFiltrosInscritoDias();
+  renderListaDesclassManual();
+  el("totalRegs").textContent = REGS.length;
   el("btnSync").innerHTML = "🔄 Sincronizar dados";
 }
 
@@ -861,6 +879,7 @@ function renderRanking() {
     tbody.innerHTML="<tr><td colspan='7' class='text-center text-muted py-3'>Nenhum classificado no período.</td></tr>";
     return;
   }
+  _rankingRegs = topN.map(function(x){ return x.reg; });
   topN.forEach(function(item,idx){
     var pos=idx+1, reg=item.reg, c=item.c;
     var medal=pos===1?"🥇":pos===2?"🥈":pos===3?"🥉":pos+"º";
@@ -868,7 +887,7 @@ function renderRanking() {
     var tr=document.createElement("tr"); tr.className=cls;
     tr.style.cursor="pointer";
     tr.title="Clique para ver dados de contato";
-    tr.onclick=(function(r){ return function(){ abrirModalContato(r); }; })(reg);
+    tr.onclick=(function(i){ return function(){ abrirModalContato(_rankingRegs[i]); }; })(idx);
     tr.innerHTML=
       "<td class='text-center fw-bold'>"+medal+"</td>"+
       "<td><strong style='color:#0a7c2f;text-decoration:underline dotted;'>"+(reg.nome||"—")+"</strong><br><small class='text-muted'>"+(reg.empresa_fazenda||"")+"</small></td>"+
@@ -1153,7 +1172,7 @@ function renderListaDesclassManual() {
       '<div class="d-flex justify-content-between align-items-center">' +
       '<strong>'+(d.nome||"—")+'</strong>' +
       '<button class="btn btn-sm btn-outline-success" style="cursor:pointer;" onclick=\''+
-        'abrirModalContato('+JSON.stringify(reg)+')\'>' +
+        'abrirModalContato(_listaRegs[i])\'>' +
       '✅ Reintegrar</button></div>' +
       '<div style="color:#666;margin-top:4px;font-size:.85rem;">Motivo: '+(d.motivo||"Sem motivo")+'</div>' +
       '</div>';
@@ -1180,8 +1199,80 @@ function popularFiltrosInscritoDias() {
   sel.innerHTML = dias.map(function(d){ return '<option value="'+d+'">'+d.split("-").reverse().join("/")+'</option>'; }).join("");
 }
 
+
 // ===============================
 // RENDERIZAR ABA INSCRITOS
+// ===============================
+var _inscritosRegs = []; // índice seguro para onclick
+
+function h(s) { // escapa HTML para evitar quebra de layout
+  return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function renderInscritos() {
+  var periodo = el("iPeriodo") ? el("iPeriodo").value : "tudo";
+  var diaVal  = el("iDia")    ? el("iDia").value      : "";
+  var iniVal  = el("iIni")    ? el("iIni").value      : "";
+  var fimVal  = el("iFim")    ? el("iFim").value      : "";
+  var regs    = filtrarRegs(periodo, diaVal, iniVal, fimVal);
+  var tbody   = el("tbInscritos");
+  if (!tbody) return;
+
+  if (!regs.length) {
+    tbody.innerHTML = "<tr><td colspan='26' class='text-center text-muted py-3'>Nenhum inscrito no período.</td></tr>";
+    if (el("totalInscritos")) el("totalInscritos").textContent = "";
+    return;
+  }
+
+  // Armazena referências seguras para o onclick
+  _inscritosRegs = regs;
+
+  var rows = regs.map(function(reg, idx) {
+    var ro   = getReaisParaReg(reg);
+    var calc = ro ? calcular(reg, ro) : null;
+    var pond = estaDesclassificadoManual(reg);
+    var pont = (calc && !pond) ? calc.classificada.toFixed(2) : "—";
+    var stat = pond
+      ? "<span class='badge-d'>DESCLASS.MANUAL</span>"
+      : calc
+        ? (calc.status === "CLASSIFICADO"
+            ? "<span class='badge-c'>CLASSIFICADO</span>"
+            : "<span class='badge-d'>DESCLASSIFICADO</span>")
+        : "—";
+
+    // Nome clicável via índice (seguro para qualquer caractere)
+    var nomeCell = "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;'" +
+                  " onclick='abrirModalContato(_inscritosRegs[" + idx + "])'>"+
+                  "<strong>" + h(reg.nome) + "</strong></span>";
+
+    var cols = [
+      h(formatarData(reg.data_hora)),
+      nomeCell,
+      h(reg.cargo), h(reg.empresa_fazenda),
+      h(reg.telefone), h(reg.email),
+      h(reg.cidade), h(reg.uf),
+      h(reg.area_soja_ha),
+      h(reg.planta_stine), h(reg.qual_stine),
+      h(reg.fornecedor_semente),
+      h(reg.segue_redes), h(reg.aceite_lgpd),
+      h(reg.variedade_soja), h(reg.populacao_final_soja),
+      h(reg.hibrido_milho), h(reg.pmg_milho), h(reg.populacao_final_milho),
+      h(reg.vagens_planta), h(reg.graos_vagem), h(reg.produtividade_sc_ha),
+      h(reg.graos_espiga_milho), h(reg.produtividade_milho_sc_ha),
+      pont, stat
+    ];
+
+    return "<tr>" + cols.map(function(v, i) {
+      return "<td>" + v + "</td>";
+    }).join("") + "</tr>";
+  });
+
+  tbody.innerHTML = rows.join("");
+  if (el("totalInscritos")) {
+    el("totalInscritos").textContent = regs.length + " inscrito(s) no período selecionado.";
+  }
+}
+
 // ===============================
 function renderInscritos() {
   var periodo = el("iPeriodo").value;
@@ -1207,7 +1298,7 @@ function renderInscritos() {
       : c ? (c.status==="CLASSIFICADO" ? "<span class='badge-c'>CLASSIFICADO</span>" : "<span class='badge-d'>DESCLASSIFICADO</span>") : "—";
     return "<tr>" + [
       formatarData(reg.data_hora),
-      "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;' onclick='abrirModalContato("+JSON.stringify(reg).replace(/'/g,"\'")+")'><strong>"+(reg.nome||"—")+"</strong></span>",
+      "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;' onclick="abrirModalContato(_inscritosRegs[idx])"><strong>"+(reg.nome||"—")+"</strong></span>",
       reg.cargo||"", reg.empresa_fazenda||"",
       reg.telefone||"", reg.email||"",
       reg.cidade||"", reg.uf||"",
