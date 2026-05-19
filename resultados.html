@@ -404,6 +404,35 @@
   </div>
 </div>
       </div>
+
+  <!-- TAB INSCRITOS -->
+  <div id="tabInscritos" class="tab-pane card" style="border-radius:0 8px 8px 8px;">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h6 class="fw-bold mb-0">📋 Todos os Inscritos</h6>
+        <div class="d-flex gap-2 align-items-end flex-wrap">
+          <div>
+            <label class="form-label mb-1" style="font-size:.82rem;">Período</label>
+            <select id="iPeriodo" class="form-select form-select-sm" onchange="onIFiltroPeriodo()">
+              <option value="tudo">Todo o evento</option>
+              <option value="dia">Dia específico</option>
+              <option value="range">Intervalo de datas</option>
+            </select>
+          </div>
+          <div id="iDiaCol" style="display:none;">
+            <label class="form-label mb-1" style="font-size:.82rem;">Dia</label>
+            <select id="iDia" class="form-select form-select-sm" onchange="renderInscritos()"></select>
+          </div>
+          <div id="iIniCol" style="display:none;">
+            <label class="form-label mb-1" style="font-size:.82rem;">De</label>
+            <input type="date" id="iIni" class="form-control form-control-sm" onchange="renderInscritos()">
+          </div>
+          <div id="iFimCol" style="display:none;">
+            <label class="form-label mb-1" style="font-size:.82rem;">Até</label>
+            <input type="date" id="iFim" class="form-control form-control-sm" onchange="renderInscritos()">
+          </div>
+        </div>
+      </div>
       <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle mb-0" style="font-size:.8rem;min-width:1200px;">
           <thead class="table-success">
@@ -424,6 +453,8 @@
       <div class="mt-2 text-muted" style="font-size:.82rem;" id="totalInscritos"></div>
     </div>
   </div>
+  </div>
+
 
 </div>
 </div>
@@ -569,7 +600,7 @@ async function sincronizar() {
 // INIT
 // ===============================
 function init() {
-  var nome = localStorage.getItem("stine_nome_evento") || "";
+  var nome = localStorage.getItem("stine_nome_evento_" + LOCAL_EVENTO) || "";
   el("nomeEvento").value = nome;
   el("lblEvento").textContent = nome || LOCAL_EVENTO;
   el("dData").value = new Date().toISOString().slice(0, 10);
@@ -582,7 +613,7 @@ el("btnSync").onclick = sincronizar;
 
 el("btnSalvarEvento").onclick = function() {
   var nome = el("nomeEvento").value.trim();
-  localStorage.setItem("stine_nome_evento", nome);
+  localStorage.setItem("stine_nome_evento_" + LOCAL_EVENTO, nome);
   el("lblEvento").textContent = nome || LOCAL_EVENTO;
   el("msgEvento").style.display = "inline";
   setTimeout(function() { el("msgEvento").style.display = "none"; }, 1800);
@@ -919,7 +950,7 @@ function onExpPeriodo() {
 function buildExportRows(apenasClass) {
   var periodo=el("ePeriodo").value;
   var regs=filtrarRegs(periodo,el("eDia").value,el("eIni").value,el("eFim").value);
-  var evt=localStorage.getItem("stine_nome_evento")||LOCAL_EVENTO;
+  var evt=localStorage.getItem("stine_nome_evento_" + LOCAL_EVENTO)||LOCAL_EVENTO;
   var comScore=regs.map(function(reg){
     var ro=getReaisParaReg(reg);
     return { reg:reg, c:ro?calcular(reg,ro):null, ro:ro };
@@ -993,7 +1024,7 @@ el("btnApagarReais").onclick=async function(){
 // ===============================
 // PESOS CONFIGURÁVEIS
 // ===============================
-const KEY_PESOS = "stine_pesos";
+var KEY_PESOS   = "stine_pesos_"   + LOCAL_EVENTO;
 const PESOS_DEFAULT = {
   soja:  { wV:20, wG:20, wP:60, wE:0,  wM:0  },
   milho: { wV:0,  wG:0,  wP:0,  wE:30, wM:70 },
@@ -1206,51 +1237,98 @@ function popularFiltrosInscritoDias() {
 // RENDERIZAR ABA INSCRITOS
 // ===============================
 
-function h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function h(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
 function renderInscritos() {
-  var periodo = el("iPeriodo").value;
-  var diaVal  = el("iDia")  ? el("iDia").value  : "";
-  var iniVal  = el("iIni")  ? el("iIni").value  : "";
-  var fimVal  = el("iFim")  ? el("iFim").value  : "";
+  var periodo = el("iPeriodo") ? el("iPeriodo").value : "tudo";
+  var diaVal  = el("iDia")    ? el("iDia").value      : "";
+  var iniVal  = el("iIni")    ? el("iIni").value      : "";
+  var fimVal  = el("iFim")    ? el("iFim").value      : "";
   var regs    = filtrarRegs(periodo, diaVal, iniVal, fimVal);
   var tbody   = el("tbInscritos");
   if (!tbody) return;
 
+  tbody.innerHTML = "";
+  _inscritosRegs  = regs; // índice seguro para onclick
+
   if (!regs.length) {
-    tbody.innerHTML = "<tr><td colspan='26' class='text-center text-muted py-3'>Nenhum inscrito no período.</td></tr>";
-    el("totalInscritos").textContent = "";
+    var trVazio = document.createElement("tr");
+    var tdVazio = document.createElement("td");
+    tdVazio.colSpan = 26;
+    tdVazio.className = "text-center text-muted py-3";
+    tdVazio.textContent = "Nenhum inscrito no período.";
+    trVazio.appendChild(tdVazio);
+    tbody.appendChild(trVazio);
+    if (el("totalInscritos")) el("totalInscritos").textContent = "";
     return;
   }
 
-  tbody.innerHTML = regs.map(function(reg) {
-    var ro = getReaisParaReg(reg);
-    var c  = ro ? calcular(reg, ro) : null;
+  regs.forEach(function(reg, idx) {
+    var ro   = getReaisParaReg(reg);
+    var calc = ro ? calcular(reg, ro) : null;
     var pond = estaDesclassificadoManual(reg);
-    var pont = (c&&!pond) ? c.classificada.toFixed(2) : "—";
-    var stat = pond ? "<span class='badge-d' title='"+getMotivoDesclass(reg)+"'>DESCLASS.MANUAL</span>"
-      : c ? (c.status==="CLASSIFICADO" ? "<span class='badge-c'>CLASSIFICADO</span>" : "<span class='badge-d'>DESCLASSIFICADO</span>") : "—";
-    return "<tr>" + [
-      formatarData(reg.data_hora),
-      "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;' onclick='abrirModalContato(_inscritosRegs[idx])'><strong>"+(reg.nome||"—")+"</strong></span>",
-      reg.cargo||"", reg.empresa_fazenda||"",
-      reg.telefone||"", reg.email||"",
-      reg.cidade||"", reg.uf||"",
-      reg.area_soja_ha||"",
-      reg.planta_stine||"", reg.qual_stine||"",
-      reg.fornecedor_semente||"",
-      reg.segue_redes||"", reg.aceite_lgpd||"",
-      reg.variedade_soja||"", reg.populacao_final_soja||"",
-      reg.hibrido_milho||"", reg.pmg_milho||"",
-      reg.populacao_final_milho||"",
-      reg.vagens_planta||"", reg.graos_vagem||"",
-      reg.produtividade_sc_ha||"",
-      reg.graos_espiga_milho||"", reg.produtividade_milho_sc_ha||"",
-      pont, stat
-    ].map(function(v,i){ return "<td>"+(i===1?v:"<span style='white-space:nowrap;'>"+v+"</span>")+"</td>"; }).join("") + "</tr>";
-  }).join("");
+    var pont = (calc && !pond) ? calc.classificada.toFixed(2) : "—";
 
-  el("totalInscritos").textContent = regs.length + " inscrito(s) no período selecionado.";
+    var tr = document.createElement("tr");
+
+    // Campos de texto em ordem das colunas
+    var textos = [
+      formatarData(reg.data_hora),
+      null,                          // col 1 = nome (especial)
+      reg.cargo,        reg.empresa_fazenda,
+      reg.telefone,     reg.email,
+      reg.cidade,       reg.uf,
+      reg.area_soja_ha,
+      reg.planta_stine, reg.qual_stine,
+      reg.fornecedor_semente,
+      reg.segue_redes,  reg.aceite_lgpd,
+      reg.variedade_soja, reg.populacao_final_soja,
+      reg.hibrido_milho,  reg.pmg_milho, reg.populacao_final_milho,
+      reg.vagens_planta,  reg.graos_vagem, reg.produtividade_sc_ha,
+      reg.graos_espiga_milho, reg.produtividade_milho_sc_ha,
+      pont
+    ];
+
+    textos.forEach(function(val, col) {
+      var td = document.createElement("td");
+      td.style.whiteSpace = "nowrap";
+      if (col === 1) {
+        // Nome clicável — closure captura idx corretamente
+        var span = document.createElement("span");
+        span.style.cursor = "pointer";
+        span.style.color  = "#0a7c2f";
+        span.style.textDecoration = "underline dotted";
+        span.innerHTML = "<strong>" + h(reg.nome || "—") + "</strong>";
+        span.addEventListener("click", (function(i){ return function(){ abrirModalContato(_inscritosRegs[i]); }; })(idx));
+        td.appendChild(span);
+      } else {
+        td.textContent = val || "";
+      }
+      tr.appendChild(td);
+    });
+
+    // Coluna Status
+    var tdStat = document.createElement("td");
+    var sp = document.createElement("span");
+    if (pond) {
+      sp.className = "badge-d"; sp.textContent = "DESCLASS.MANUAL";
+    } else if (calc && calc.status === "CLASSIFICADO") {
+      sp.className = "badge-c"; sp.textContent = "CLASSIFICADO";
+    } else {
+      sp.className = "badge-d"; sp.textContent = calc ? "DESCLASSIFICADO" : "—";
+    }
+    tdStat.appendChild(sp);
+    tr.appendChild(tdStat);
+
+    tbody.appendChild(tr);
+  });
+
+  if (el("totalInscritos")) {
+    el("totalInscritos").textContent = regs.length + " inscrito(s) no período selecionado.";
+  }
 }
+
 
 </script>
 </body>
