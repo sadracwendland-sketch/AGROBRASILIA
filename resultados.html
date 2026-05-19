@@ -539,7 +539,8 @@ async function sincronizar() {
     el("totalRegs").textContent = REGS.length;
   } catch(e) {
     el("lblSync").textContent = "❌ Erro: " + e.message;
-    console.error(e);
+    el("lblSync").style.color = "#dc3545";
+    console.error("Sincronizar erro:", e);
   }
   el("btnSync").innerHTML = "🔄 Sincronizar dados";
 }
@@ -695,11 +696,11 @@ function formatarData(iso) {
 function deduplicarRegs(regs) {
   var vistos = {};
   return regs.filter(function(reg) {
-    var chave = reg.hash_registro ||
+    // Usa ID Supabase (sempre único) — fallback por nome+telefone+data
+    var chave = reg.id ||
       ((reg.nome||"").toLowerCase().replace(/ /g,"") + "|" +
        (reg.telefone||"").replace(/[^0-9]/g,"") + "|" +
-       (reg.data_hora||"").slice(0,10) + "|" +
-       (reg.local_evento||""));
+       (reg.data_hora||"").slice(0,10));
     if (vistos[chave]) return false;
     vistos[chave] = true;
     return true;

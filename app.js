@@ -283,8 +283,7 @@ async function salvarNoSupabase(payload) {
       graos_vagem:              payload.graos_vagem              || "",
       produtividade_sc_ha:      payload.produtividade_sc_ha      || "",
       graos_espiga_milho:       payload.graos_espiga_milho       || "",
-      produtividade_milho_sc_ha: payload.produtividade_milho_sc_ha || "",
-      hash_registro: gerarHashSupabase(payload)
+      produtividade_milho_sc_ha: payload.produtividade_milho_sc_ha || ""
     };
     await fetch(SUPABASE_URL + "/rest/v1/stine_coletas", {
       method: "POST",
@@ -297,7 +296,23 @@ async function salvarNoSupabase(payload) {
       body: JSON.stringify(row)
     });
   } catch(e) {
-    console.warn("Supabase: falha ao salvar (nao critico):", e);
+    console.error("Supabase INSERT erro:", e);
+    // Tenta novamente sem campos opcionais
+    try {
+      delete row.hash_registro;
+      await fetch(SUPABASE_URL + "/rest/v1/stine_coletas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + SUPABASE_KEY,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(row)
+      });
+    } catch(e2) {
+      console.error("Supabase retry falhou:", e2);
+    }
   }
 }
 
