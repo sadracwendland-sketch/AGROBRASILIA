@@ -1298,7 +1298,7 @@ function renderInscritos() {
       : c ? (c.status==="CLASSIFICADO" ? "<span class='badge-c'>CLASSIFICADO</span>" : "<span class='badge-d'>DESCLASSIFICADO</span>") : "—";
     return "<tr>" + [
       formatarData(reg.data_hora),
-      "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;' onclick="abrirModalContato(_inscritosRegs[idx])"><strong>"+(reg.nome||"—")+"</strong></span>",
+      "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;' onclick='abrirModalContato(_inscritosRegs[idx])'><strong>"+(reg.nome||"—")+"</strong></span>",
       reg.cargo||"", reg.empresa_fazenda||"",
       reg.telefone||"", reg.email||"",
       reg.cidade||"", reg.uf||"",
