@@ -360,6 +360,10 @@ if (stineForm) {
     var reativarBtn = function() {
       if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar participação'; }
     };
+    // Lê cultura ativa para não enviar dados de culturas inativas
+    var dadosAdmin = JSON.parse(localStorage.getItem(STORAGE_ADMIN) || "{}");
+    var culturaAtiva = dadosAdmin.cultura || "Ambas";
+
     var payload = {
       DataHora: new Date().toISOString(), Local: LOCAL_EVENTO,
       Segue_Redes:           stineForm.segue            ? stineForm.segue.value            : "",
@@ -375,16 +379,18 @@ if (stineForm) {
       planta_stine:          stineForm.planta_stine     ? stineForm.planta_stine.value     : "",
       qual_stine:            stineForm.qual_stine       ? stineForm.qual_stine.value       : "",
       fornecedor_semente:    stineForm.fornecedor_semente ? stineForm.fornecedor_semente.value : "",
-      variedade_soja:        el("variedade_soja")        ? el("variedade_soja").value        : "",
-      populacao_final_soja:  el("populacao_final_soja")  ? el("populacao_final_soja").value  : "",
-      vagens_planta:         stineForm.vagens.value,
-      graos_vagem:           stineForm.graos.value,
-      produtividade_sc_ha:   stineForm.produtividade.value,
-      hibrido_milho:         el("hibrido_milho")         ? el("hibrido_milho").value         : "",
-      pmg_milho:             el("pmg_milho")             ? el("pmg_milho").value             : "",
-      populacao_final_milho: el("populacao_final_milho") ? el("populacao_final_milho").value : "",
-      graos_espiga_milho:    stineForm.graos_milho       ? stineForm.graos_milho.value       : "",
-      produtividade_milho_sc_ha: stineForm.produtividade_milho ? stineForm.produtividade_milho.value : ""
+      // SOJA — zerado quando cultura = Milho
+      variedade_soja:        (culturaAtiva !== "Milho" && el("variedade_soja"))        ? el("variedade_soja").value        : "",
+      populacao_final_soja:  (culturaAtiva !== "Milho" && el("populacao_final_soja"))  ? el("populacao_final_soja").value  : "",
+      vagens_planta:         culturaAtiva !== "Milho" ? stineForm.vagens.value         : "",
+      graos_vagem:           culturaAtiva !== "Milho" ? stineForm.graos.value          : "",
+      produtividade_sc_ha:   culturaAtiva !== "Milho" ? stineForm.produtividade.value  : "",
+      // MILHO — zerado quando cultura = Soja
+      hibrido_milho:         (culturaAtiva !== "Soja" && el("hibrido_milho"))         ? el("hibrido_milho").value         : "",
+      pmg_milho:             (culturaAtiva !== "Soja" && el("pmg_milho"))             ? el("pmg_milho").value             : "",
+      populacao_final_milho: (culturaAtiva !== "Soja" && el("populacao_final_milho")) ? el("populacao_final_milho").value : "",
+      graos_espiga_milho:    (culturaAtiva !== "Soja" && stineForm.graos_milho)       ? stineForm.graos_milho.value       : "",
+      produtividade_milho_sc_ha: (culturaAtiva !== "Soja" && stineForm.produtividade_milho) ? stineForm.produtividade_milho.value : ""
     };
 
     var hash     = gerarHashRegistro(payload);
