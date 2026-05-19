@@ -286,13 +286,13 @@ async function salvarNoSupabase(payload) {
       produtividade_milho_sc_ha: payload.produtividade_milho_sc_ha || "",
       hash_registro: gerarHashSupabase(payload)
     };
-    await fetch(SUPABASE_URL + "/rest/v1/stine_coletas?on_conflict=local_evento,hash_registro", {
+    await fetch(SUPABASE_URL + "/rest/v1/stine_coletas", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
         "Authorization": "Bearer " + SUPABASE_KEY,
-        "Prefer": "resolution=ignore-duplicates,return=minimal"
+        "Prefer": "return=minimal"
       },
       body: JSON.stringify(row)
     });
