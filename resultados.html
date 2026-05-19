@@ -548,19 +548,21 @@ async function sincronizar() {
     REAIS = {};
   }
 
-  // Renderiza sempre — independente de falhas parciais
+  // Reset botão SEMPRE — independente de erros nos renders
+  el("btnSync").innerHTML = "🔄 Sincronizar dados";
   if (!el("lblSync").textContent.startsWith("❌")) {
     el("lblSync").textContent = "Atualizado (" + REGS.length + " registros)";
   }
-  atualizarStats();
-  renderListaDias();
-  popularFiltrosDias();
-  renderRanking();
-  renderInscritos();
-  popularFiltrosInscritoDias();
-  renderListaDesclassManual();
   el("totalRegs").textContent = REGS.length;
-  el("btnSync").innerHTML = "🔄 Sincronizar dados";
+
+  // Cada render em try-catch próprio — erro em um não quebra os outros
+  try { atualizarStats(); }           catch(e){ console.error("atualizarStats:", e); }
+  try { renderListaDias(); }          catch(e){ console.error("renderListaDias:", e); }
+  try { popularFiltrosDias(); }       catch(e){ console.error("popularFiltrosDias:", e); }
+  try { renderRanking(); }            catch(e){ console.error("renderRanking:", e); }
+  try { renderInscritos(); }          catch(e){ console.error("renderInscritos:", e); }
+  try { popularFiltrosInscritoDias(); }catch(e){ console.error("popularFiltrosInscritoDias:", e); }
+  try { renderListaDesclassManual(); }catch(e){ console.error("renderListaDesclassManual:", e); }
 }
 
 // ===============================
@@ -1203,77 +1205,8 @@ function popularFiltrosInscritoDias() {
 // ===============================
 // RENDERIZAR ABA INSCRITOS
 // ===============================
-var _inscritosRegs = []; // índice seguro para onclick
 
-function h(s) { // escapa HTML para evitar quebra de layout
-  return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function renderInscritos() {
-  var periodo = el("iPeriodo") ? el("iPeriodo").value : "tudo";
-  var diaVal  = el("iDia")    ? el("iDia").value      : "";
-  var iniVal  = el("iIni")    ? el("iIni").value      : "";
-  var fimVal  = el("iFim")    ? el("iFim").value      : "";
-  var regs    = filtrarRegs(periodo, diaVal, iniVal, fimVal);
-  var tbody   = el("tbInscritos");
-  if (!tbody) return;
-
-  if (!regs.length) {
-    tbody.innerHTML = "<tr><td colspan='26' class='text-center text-muted py-3'>Nenhum inscrito no período.</td></tr>";
-    if (el("totalInscritos")) el("totalInscritos").textContent = "";
-    return;
-  }
-
-  // Armazena referências seguras para o onclick
-  _inscritosRegs = regs;
-
-  var rows = regs.map(function(reg, idx) {
-    var ro   = getReaisParaReg(reg);
-    var calc = ro ? calcular(reg, ro) : null;
-    var pond = estaDesclassificadoManual(reg);
-    var pont = (calc && !pond) ? calc.classificada.toFixed(2) : "—";
-    var stat = pond
-      ? "<span class='badge-d'>DESCLASS.MANUAL</span>"
-      : calc
-        ? (calc.status === "CLASSIFICADO"
-            ? "<span class='badge-c'>CLASSIFICADO</span>"
-            : "<span class='badge-d'>DESCLASSIFICADO</span>")
-        : "—";
-
-    // Nome clicável via índice (seguro para qualquer caractere)
-    var nomeCell = "<span style='cursor:pointer;color:#0a7c2f;text-decoration:underline dotted;'" +
-                  " onclick='abrirModalContato(_inscritosRegs[" + idx + "])'>"+
-                  "<strong>" + h(reg.nome) + "</strong></span>";
-
-    var cols = [
-      h(formatarData(reg.data_hora)),
-      nomeCell,
-      h(reg.cargo), h(reg.empresa_fazenda),
-      h(reg.telefone), h(reg.email),
-      h(reg.cidade), h(reg.uf),
-      h(reg.area_soja_ha),
-      h(reg.planta_stine), h(reg.qual_stine),
-      h(reg.fornecedor_semente),
-      h(reg.segue_redes), h(reg.aceite_lgpd),
-      h(reg.variedade_soja), h(reg.populacao_final_soja),
-      h(reg.hibrido_milho), h(reg.pmg_milho), h(reg.populacao_final_milho),
-      h(reg.vagens_planta), h(reg.graos_vagem), h(reg.produtividade_sc_ha),
-      h(reg.graos_espiga_milho), h(reg.produtividade_milho_sc_ha),
-      pont, stat
-    ];
-
-    return "<tr>" + cols.map(function(v, i) {
-      return "<td>" + v + "</td>";
-    }).join("") + "</tr>";
-  });
-
-  tbody.innerHTML = rows.join("");
-  if (el("totalInscritos")) {
-    el("totalInscritos").textContent = regs.length + " inscrito(s) no período selecionado.";
-  }
-}
-
-// ===============================
+function h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function renderInscritos() {
   var periodo = el("iPeriodo").value;
   var diaVal  = el("iDia")  ? el("iDia").value  : "";
